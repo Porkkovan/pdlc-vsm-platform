@@ -9,6 +9,7 @@ For each bottleneck, generates targeted improvement actions using:
 import logging
 from ..state import VSMAgentState
 from ..pdlc_data import ALL_ACTIVITIES
+from ..llm import ainvoke, has_llm
 
 logger = logging.getLogger(__name__)
 
@@ -187,11 +188,77 @@ async def run_improvement_generator(state: VSMAgentState) -> VSMAgentState:
             })
             imp_id += 1
 
+    # LLM-enhanced: generate AI-specific improvement details for high-priority items
+    if has_llm():
+        high_pri = [i for i in improvements if i.get("priority") == "High"][:5]
+        improvements = await _llm_enrich_improvements(high_pri, improvements, state)
+
     # Sort by priority and phase
     priority_order = {"High": 0, "Medium": 1, "Low": 2}
     improvements.sort(key=lambda i: (priority_order.get(i.get("priority", "Medium"), 1), i.get("phase_id", 0)))
 
     return {**state, "improvements": improvements, "recommendations": improvements}
+
+
+async def _llm_enrich_improvements(high_pri: list, all_improvements: list, state: dict) -> list:
+    """Use LLM to generate tailored improvement details including competitor insights and GenAI specifics."""
+    project = state.get("project", {})
+    metrics = state.get("metrics", {})
+
+    bottleneck_list = "\n".join(
+        f"- {i['activity']} ({i['phase_name']}): {i.get('problem', '')}"
+        for i in high_pri
+    )
+    prompt = f"""You are a world-class software engineering transformation expert specialising in GenAI-powered PDLC optimisation.
+
+Team: {project.get('team', 'Engineering')}  Industry: {project.get('industry', 'Technology')}
+Current Flow Efficiency: {metrics.get('overall_flow_efficiency', '?')}%
+Current Lead Time: {metrics.get('total_lead_time_days', '?')} days
+
+Top bottlenecks requiring improvement actions:
+{bottleneck_list}
+
+For each bottleneck, provide a specific, actionable improvement recommendation that:
+1. Names the exact GenAI agent, tool, or technique to deploy
+2. Quantifies the expected PT and WT reduction (%)
+3. References a real-world competitor or industry leader who uses this approach
+4. Includes a specific implementation step as a quick win
+
+Return ONLY a JSON array, no extra text:
+[
+  {{
+    "activity": "<exact activity name>",
+    "genai_recommendation": "<specific GenAI/AI tool and how to deploy it>",
+    "competitor_insight": "<real company using this approach and their outcome>",
+    "quick_win": "<one specific first step implementable in < 2 weeks>",
+    "expected_pt_reduction": <number 0-90>,
+    "expected_wt_reduction": <number 0-95>
+  }},
+  ...
+]"""
+    try:
+        raw = await ainvoke(prompt)
+        import json, re
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if not match:
+            return all_improvements
+        enrichments = json.loads(match.group())
+        enrichment_map = {e["activity"]: e for e in enrichments}
+        for imp in all_improvements:
+            e = enrichment_map.get(imp.get("activity", ""), {})
+            if e:
+                imp["genai_recommendation"] = e.get("genai_recommendation", "")
+                imp["competitor_insight"]   = e.get("competitor_insight", "")
+                imp["quick_win"]            = e.get("quick_win", "")
+                # Use LLM's more precise estimates if available
+                if e.get("expected_pt_reduction"):
+                    imp["pt_reduction"] = e["expected_pt_reduction"]
+                if e.get("expected_wt_reduction"):
+                    imp["wt_reduction"] = e["expected_wt_reduction"]
+    except Exception as ex:
+        logger.warning(f"[Improvement Generator] LLM enrichment failed: {ex}")
+
+    return all_improvements
 
 
 def _generic_improvement(bn: dict, imp_id: int) -> dict:

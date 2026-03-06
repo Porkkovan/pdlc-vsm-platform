@@ -12,9 +12,19 @@ class Settings(BaseSettings):
     # Database
     database_url: str = f"sqlite+aiosqlite:///{BASE_DIR}/database/vsm.db"
 
-    # OpenAI (optional — falls back to rule-based)
+    # Azure OpenAI
+    azure_openai_api_key: str = ""
+    azure_openai_endpoint: str = ""
+    azure_openai_deployment: str = "gpt-4o"
+    azure_openai_api_version: str = "2024-02-15-preview"
+
+    # Standard OpenAI (fallback if Azure not configured)
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+
+    @property
+    def use_azure(self) -> bool:
+        return bool(self.azure_openai_api_key and self.azure_openai_endpoint)
 
     # ALM defaults
     jira_url: str = ""
@@ -25,7 +35,7 @@ class Settings(BaseSettings):
     ado_personal_access_token: str = ""
 
     class Config:
-        env_file = ".env"
+        env_file = str(BASE_DIR / ".env")
         extra = "ignore"
 
 

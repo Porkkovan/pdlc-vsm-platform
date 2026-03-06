@@ -8,6 +8,7 @@ Designs 3 future state VSM scenarios with predicted lean metrics:
 import logging
 from ..state import VSMAgentState
 from ..pdlc_data import PDLC_PHASES
+from ..llm import ainvoke, has_llm
 
 logger = logging.getLogger(__name__)
 
@@ -128,4 +129,44 @@ async def run_future_state_designer(state: VSMAgentState) -> VSMAgentState:
             }
         }
 
+    # LLM-enhanced: generate narrative for each scenario
+    if has_llm():
+        future_states = await _enrich_with_narratives(future_states, state)
+
     return {**state, "future_states": future_states}
+
+
+async def _enrich_with_narratives(future_states: dict, state: dict) -> dict:
+    """Add LLM-generated executive narrative and specific agent deployment plan per scenario."""
+    project = state.get("project", {})
+    current_metrics = state.get("metrics", {})
+
+    for scenario_id, fs in future_states.items():
+        m = fs.get("metrics", {})
+        vc = fs.get("vs_current", {})
+        prompt = f"""You are a digital transformation strategist. Write an executive summary for a future state VSM scenario.
+
+Team: {project.get('team', 'Engineering')}  Industry: {project.get('industry', '')}
+Scenario: {fs['label']} — {fs['title']}
+Description: {fs['description']}
+Automation Level: {fs.get('automation_pct', fs.get('automation_level', '?'))}%
+Human Roles: {', '.join(fs['human_roles'])}
+AI Agents Deployed: {', '.join(fs['aiAgents']) if isinstance(fs.get('aiAgents'), list) and fs['aiAgents'] else str(fs.get('agent_count', '?')) + ' AI agents'}
+
+Current State: LT={current_metrics.get('total_lead_time_days', '?')}d, FE={current_metrics.get('overall_flow_efficiency', '?')}%
+Future State:  LT={m.get('total_lead_time_days', '?')}d, FE={m.get('overall_flow_efficiency', '?')}%
+Improvements:  LT -{vc.get('lt_reduction_pct', '?')}%, FE +{vc.get('fe_absolute_gain', '?')} pts
+
+Write 4–5 sentences covering:
+1. What this transformation achieves and who it affects
+2. Key AI agents enabling the improvement and their specific role
+3. Expected engineering culture and ways-of-working change
+4. Predicted competitive advantage in time-to-market
+
+Be specific and inspiring. No bullet points."""
+        try:
+            fs["narrative"] = await ainvoke(prompt)
+        except Exception as ex:
+            logger.warning(f"[Future State Designer] LLM narrative failed for {scenario_id}: {ex}")
+
+    return future_states

@@ -12,6 +12,7 @@ Generates comprehensive business cases for each future state scenario:
 """
 import logging
 from ..state import VSMAgentState
+from ..llm import ainvoke, has_llm
 
 logger = logging.getLogger(__name__)
 
@@ -198,4 +199,50 @@ async def run_business_case_builder(state: VSMAgentState) -> VSMAgentState:
             }
         }
 
+    # LLM-enhanced: generate tailored executive summary and risk section per scenario
+    if has_llm():
+        business_cases = await _enrich_business_cases(business_cases, state)
+
     return {**state, "business_cases": business_cases}
+
+
+async def _enrich_business_cases(business_cases: dict, state: dict) -> dict:
+    """Add LLM-generated executive summary and key risks per business case."""
+    project  = state.get("project", {})
+    industry = project.get("industry", "Technology")
+
+    for scenario_id, bc in business_cases.items():
+        prompt = f"""You are a management consultant building a business case for a PDLC transformation.
+
+Organisation: {project.get('organization', 'Enterprise')}  Industry: {industry}
+Scenario: {bc.get('scenario_label', '')} — {bc.get('scenario_title', '')}
+Investment: {bc['investment_range']}
+ROI: {bc['roi_multiple']}× in {bc['roi_timeline']}
+Lead Time Reduction: {bc.get('metrics_summary', {}).get('lt_reduction', '?')}%
+Flow Efficiency Gain: {bc.get('metrics_summary', {}).get('fe_gain', '?')} percentage points
+
+Write:
+1. A 3-sentence executive summary suitable for a C-suite audience (paragraph, no bullets)
+2. Top 3 implementation risks with one-line mitigation for each
+
+Return ONLY JSON, no extra text:
+{{
+  "executive_summary": "<3 sentences>",
+  "risks": [
+    {{"risk": "<risk>", "mitigation": "<mitigation>"}},
+    {{"risk": "<risk>", "mitigation": "<mitigation>"}},
+    {{"risk": "<risk>", "mitigation": "<mitigation>"}}
+  ]
+}}"""
+        try:
+            raw = await ainvoke(prompt)
+            import json, re
+            match = re.search(r'\{.*\}', raw, re.DOTALL)
+            if match:
+                result = json.loads(match.group())
+                bc["executive_summary"] = result.get("executive_summary", "")
+                bc["risks"]             = result.get("risks", [])
+        except Exception as ex:
+            logger.warning(f"[Business Case Builder] LLM enrichment failed for {scenario_id}: {ex}")
+
+    return business_cases

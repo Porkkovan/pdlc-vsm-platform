@@ -9,6 +9,7 @@ Identifies flow bottlenecks per PDLC phase and activity using Lean VSM criteria:
 import logging
 from ..state import VSMAgentState
 from ..pdlc_data import PDLC_PHASES, ALL_ACTIVITIES
+from ..llm import ainvoke, has_llm
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +129,55 @@ async def run_bottleneck_analyzer(state: VSMAgentState) -> VSMAgentState:
     severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
     bottlenecks.sort(key=lambda b: severity_order.get(b["severity"], 99))
 
+    # LLM-enhanced: enrich top bottlenecks with deeper root-cause analysis
+    if has_llm() and bottlenecks:
+        bottlenecks = await _enrich_bottlenecks(bottlenecks[:6], state)
+
     logger.info(f"[Bottleneck Analyzer] Found {len(bottlenecks)} bottlenecks")
     return {**state, "bottlenecks": bottlenecks}
+
+
+async def _enrich_bottlenecks(top_bns: list, state: dict) -> list:
+    """Use LLM to generate deeper root-cause and business impact for top bottlenecks."""
+    metrics = state.get("metrics", {})
+    project = state.get("project", {})
+
+    summary_lines = "\n".join(
+        f"- {b['activity']} ({b['phase_name']}): {b['metric']}={b['value']}, severity={b['severity']}"
+        for b in top_bns
+    )
+    prompt = f"""You are a Lean VSM and software engineering expert.
+
+Team: {project.get('team', 'Engineering Team')}  Industry: {project.get('industry', '')}
+Overall Flow Efficiency: {metrics.get('overall_flow_efficiency', '?')}%
+Total Lead Time: {metrics.get('total_lead_time_days', '?')} days
+
+Top bottlenecks identified:
+{summary_lines}
+
+For each bottleneck, provide a one-sentence root cause and a one-sentence business impact (time-to-market, quality, or cost angle).
+Return ONLY a JSON array in this exact format, no extra text:
+[
+  {{"activity": "<name>", "root_cause": "<sentence>", "business_impact": "<sentence>"}},
+  ...
+]"""
+    try:
+        raw = await ainvoke(prompt)
+        import json, re
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if match:
+            enrichments = json.loads(match.group())
+            enrichment_map = {e["activity"]: e for e in enrichments}
+            for bn in top_bns:
+                e = enrichment_map.get(bn["activity"], {})
+                if e:
+                    bn["root_cause"]      = e.get("root_cause", "")
+                    bn["business_impact"] = e.get("business_impact", "")
+    except Exception as ex:
+        logger.warning(f"[Bottleneck Analyzer] LLM enrichment failed: {ex}")
+
+    # Return enriched top bns; the rest stay as-is (appended below by caller)
+    return top_bns
 
 
 def _default_bottlenecks() -> list:
