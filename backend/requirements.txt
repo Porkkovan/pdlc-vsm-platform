@@ -1,0 +1,25 @@
+fastapi==0.115.0
+uvicorn[standard]==0.31.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# LangGraph + LangChain
+langgraph==0.2.35
+langchain==0.3.1
+langchain-openai==0.2.1
+langchain-community==0.3.1
+
+# Database
+sqlalchemy==2.0.35
+aiosqlite==0.20.0
+
+# ALM Integrations
+jira==3.8.0
+requests==2.32.3
+httpx==0.27.2
+
+# Utilities
+python-dotenv==1.0.1
+python-multipart==0.0.12
+openpyxl==3.1.5
+pandas==2.2.3
