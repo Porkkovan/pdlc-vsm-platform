@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, dict as Dict
+from typing import Optional
 
 from ..agents.alm_connector.agent import run_alm_connector, _generate_sample_data, _map_to_vsm
 
