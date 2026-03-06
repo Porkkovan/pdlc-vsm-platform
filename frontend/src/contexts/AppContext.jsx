@@ -23,6 +23,7 @@ export function AppProvider({ children }) {
   const [activeScenario, setActiveScenario] = useState('option-a')
   const [customOverrides, setCustomOverrides] = useState({})    // activity-level overrides
   const [notifications, setNotifications] = useState([])
+  const [vsmLevel, setVsmLevel]         = useState('feature')   // 'feature' | 'user-story'
 
   const addNotification = useCallback((msg, type = 'info') => {
     const id = Date.now()
@@ -52,6 +53,7 @@ export function AppProvider({ children }) {
       customOverrides, setCustomOverrides,
       notifications, addNotification,
       resetProject,
+      vsmLevel, setVsmLevel,
       pdlcPhases: PDLC_PHASES
     }}>
       {children}
