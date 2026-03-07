@@ -613,6 +613,18 @@ export default function BusinessCasePage() {
             </div>
           </div>
 
+          {/* Contextualise CTA */}
+          <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 text-center">
+            <div className="text-2xl mb-2">🎯</div>
+            <div className="font-bold text-indigo-800 text-lg mb-1">Make this playbook 90%+ accurate</div>
+            <p className="text-sm text-indigo-700 mb-4">
+              The playbook above uses industry defaults. Provide your team context, technology stack, compliance requirements, and supporting documents to generate a personalised version specific to your team.
+            </p>
+            <Link to="/playbook-context" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl text-sm shadow-md">
+              🚀 Contextualise My Playbook →
+            </Link>
+          </div>
+
           {/* Risk Register */}
           <div className="card">
             <div className="card-header"><h3 className="font-bold text-gray-800">Risk Register & Mitigations</h3></div>

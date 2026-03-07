@@ -15,6 +15,7 @@ import RecommendationsPage  from './pages/RecommendationsPage'
 import GlossaryPage         from './pages/GlossaryPage'
 import SettingsPage         from './pages/SettingsPage'
 import AgentsPage           from './pages/AgentsPage'
+import PlaybookContextPage  from './pages/PlaybookContextPage'
 
 export default function App() {
   return (

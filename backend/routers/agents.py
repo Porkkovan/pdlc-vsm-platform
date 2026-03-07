@@ -14,6 +14,7 @@ from ..agents.improvement_generator.agent import run_improvement_generator
 from ..agents.future_state_designer.agent import run_future_state_designer
 from ..agents.business_case_builder.agent import run_business_case_builder
 from ..agents.benchmark_agent.agent   import run_benchmark_agent
+from ..agents.playbook_contextualizer.agent import run_playbook_contextualizer
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -122,3 +123,24 @@ async def run_benchmark_ep(project_id: str):
     state = _empty_state(project_id)
     result = await run_benchmark_agent(state)
     return {"benchmarks": result.get("benchmarks", {})}
+
+
+class PlaybookContextRequest(BaseModel):
+    scenario_id:    str
+    scenario_label: str
+    analysis_context: dict = {}
+    team_context:   dict = {}
+    documents:      dict = {}
+
+
+@router.post("/contextualise-playbook/{project_id}")
+async def contextualise_playbook(project_id: str, req: PlaybookContextRequest):
+    """Generate a personalised implementation playbook from team context + analysis data."""
+    result = await run_playbook_contextualizer(
+        scenario_id=req.scenario_id,
+        scenario_label=req.scenario_label,
+        analysis_context=req.analysis_context,
+        team_context=req.team_context,
+        documents=req.documents,
+    )
+    return result
