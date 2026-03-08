@@ -3,13 +3,18 @@ import { useApp } from '../contexts/AppContext'
 import { PDLC_PHASES, VSM_METRICS } from '../data/pdlcPhases'
 import { agentsApi } from '../services/api'
 import { Link } from 'react-router-dom'
+import VSMVisualFlow from '../components/vsm/VSMVisualFlow'
 
 const PHASE_COLORS = ['blue','purple','green','orange','red','teal','cyan']
+
+// Bottleneck threshold — FE < 30% triggers warning
+const BOTTLENECK_FE_THRESHOLD = 30
 
 export default function CurrentVSMPage() {
   const { vsmData, setAnalysisResult, addNotification, project } = useApp()
   const [openPhase, setOpenPhase] = useState(null)
   const [running, setRunning] = useState(false)
+  const [view, setView] = useState('visual') // 'visual' | 'bars' | 'phases'
 
   // Merge ALM data with default ranges
   const getPhaseMetrics = (phase) => {
@@ -28,6 +33,19 @@ export default function CurrentVSMPage() {
   const totalLT = (totalPT + totalWT) / 8   // convert hours to days
   const flowEfficiency = ((totalPT / (totalPT + totalWT)) * 100).toFixed(1)
 
+  // Build visual flow phases
+  const visualPhases = PDLC_PHASES.map(phase => {
+    const m = getPhaseMetrics(phase)
+    const fe = m.processTime / (m.processTime + m.waitTime) * 100
+    return {
+      id:          phase.id,
+      name:        phase.name,
+      processTime: m.processTime,
+      waitTime:    m.waitTime,
+      isBottleneck: fe < BOTTLENECK_FE_THRESHOLD,
+    }
+  })
+
   const runAnalysis = async () => {
     setRunning(true)
     try {
@@ -43,22 +61,44 @@ export default function CurrentVSMPage() {
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-2xl font-bold mb-1">Current State Value Stream Map</h2>
             <p className="text-purple-100">Baseline PDLC metrics — Process Time, Wait Time, Lead Time, Flow Efficiency</p>
           </div>
-          <button
-            onClick={runAnalysis}
-            disabled={running}
-            className="bg-white text-purple-700 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-purple-50 transition-colors shadow"
-          >
-            {running ? '⏳ Analyzing...' : '🤖 Run AI Analysis'}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* View tabs */}
+            <div className="flex bg-white/20 rounded-lg overflow-hidden text-sm">
+              {[['visual','🗺 Visual Flow'],['bars','📊 Flow Bars'],['phases','📋 Phases']].map(([v,l]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1.5 font-semibold text-xs transition-colors ${view===v ? 'bg-white text-purple-700' : 'text-white hover:bg-white/10'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={runAnalysis}
+              disabled={running}
+              className="bg-white text-purple-700 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-purple-50 transition-colors shadow"
+            >
+              {running ? '⏳ Analyzing...' : '🤖 Run AI Analysis'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* KPI summary */}
+      {/* Visual Flow diagram */}
+      {view === 'visual' && (
+        <VSMVisualFlow
+          mode="current"
+          phases={visualPhases}
+          totalPT={totalPT}
+          totalWT={totalWT}
+          flowEfficiency={flowEfficiency}
+        />
+      )}
+
+      {/* KPI summary (always visible) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Process Time', value: `${Math.round(totalPT)} hrs`, sub: 'Touch time',     color: 'blue'  },
@@ -75,6 +115,7 @@ export default function CurrentVSMPage() {
       </div>
 
       {/* VSM flow bar */}
+      {view === 'bars' && (
       <div className="card card-body">
         <h3 className="font-bold text-gray-800 mb-4">Value Stream Flow — Process vs Wait Time</h3>
         <div className="space-y-3">
@@ -113,8 +154,10 @@ export default function CurrentVSMPage() {
           <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-400 rounded" /><span>Wait Time (waste)</span></div>
         </div>
       </div>
+      )}
 
       {/* Phase accordion */}
+      {view === 'phases' && (
       <div className="space-y-3">
         {PDLC_PHASES.map((phase, i) => {
           const m = getPhaseMetrics(phase)
@@ -173,6 +216,7 @@ export default function CurrentVSMPage() {
           )
         })}
       </div>
+      )}
 
       {/* CTA */}
       <div className="flex gap-4">

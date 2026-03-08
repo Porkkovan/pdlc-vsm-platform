@@ -6,14 +6,18 @@ import clsx from 'clsx'
 const NAV_ITEMS = [
   { path: '/dashboard',       label: 'Dashboard',          icon: '📊', group: 'main' },
   { path: '/alm-connect',     label: 'ALM Connect',         icon: '🔗', group: 'setup' },
+  { path: '/dora-assessment',  label: 'DORA Assessment',         icon: '📈', group: 'setup' },
+  { path: '/devops-maturity', label: 'DevOps Maturity Assessment', icon: '🏆', group: 'setup' },
   { path: '/vsm-editor',      label: 'VSM Editor',          icon: '✏️', group: 'setup' },
   { path: '/current-vsm',     label: 'Current State VSM',   icon: '🗺️', group: 'analysis' },
   { path: '/bottlenecks',     label: 'Bottleneck Analysis', icon: '⚠️', group: 'analysis' },
   { path: '/improvements',    label: 'Improvements',        icon: '🚀', group: 'analysis' },
   { path: '/future-state',    label: 'Future State VSM',    icon: '🔮', group: 'future' },
   { path: '/business-case',   label: 'Business Case',       icon: '💼', group: 'future' },
-  { path: '/recommendations', label: 'Recommendations',     icon: '💡', group: 'insights' },
-  { path: '/agents',          label: 'AI Agents',           icon: '🤖', group: 'insights' },
+  { path: '/accuracy',         label: 'Accuracy & RAG',       icon: '🎯', group: 'insights' },
+  { path: '/recommendations',  label: 'Recommendations',     icon: '💡', group: 'insights' },
+  { path: '/agents',           label: 'AI Agents',           icon: '🤖', group: 'insights' },
+  { path: '/playbook-context', label: 'Playbook',            icon: '📋', group: 'insights' },
   { path: '/glossary',        label: 'Glossary',            icon: '📖', group: 'reference' },
   { path: '/settings',        label: 'Settings',            icon: '⚙️', group: 'reference' }
 ]

@@ -26,6 +26,10 @@ class RunRequest(BaseModel):
     scenario: Optional[str] = "all"  # option-a, option-b, option-c, or all
 
 
+class AnalysisRequest(BaseModel):
+    dora_calibration: Optional[dict] = None
+
+
 def _empty_state(project_id: str) -> dict:
     return {
         "project_id": project_id,
@@ -40,14 +44,15 @@ def _empty_state(project_id: str) -> dict:
 
 
 @router.post("/run-analysis/{project_id}")
-async def run_analysis(project_id: str, background_tasks: BackgroundTasks):
+async def run_analysis(project_id: str, background_tasks: BackgroundTasks, req: AnalysisRequest = None):
     """Kick off the full multi-agent pipeline in the background."""
     run_id = str(uuid.uuid4())
+    dora_calibration = (req.dora_calibration or {}) if req else {}
     _runs[run_id] = {"status": "running", "project_id": project_id}
 
     async def _run():
         try:
-            result = await run_full_analysis(project_id, {}, {})
+            result = await run_full_analysis(project_id, {}, {}, dora_calibration=dora_calibration)
             _runs[run_id] = {"status": "complete", "result": result}
         except Exception as e:
             _runs[run_id] = {"status": "failed", "error": str(e)}

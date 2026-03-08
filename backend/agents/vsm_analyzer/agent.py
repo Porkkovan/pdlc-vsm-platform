@@ -22,6 +22,12 @@ async def run_vsm_analyzer(state: VSMAgentState) -> VSMAgentState:
         logger.warning("[VSM Analyzer] No VSM data — cannot compute metrics")
         return {**state, "metrics": {}, "errors": state.get("errors", []) + ["VSM Analyzer: no data"]}
 
+    # Apply DORA calibration overrides if available
+    dora_calibration = state.get("dora_calibration", {})
+    if dora_calibration:
+        logger.info(f"[VSM Analyzer] Applying DORA calibration: {list(dora_calibration.keys())}")
+        phases = _apply_dora_calibration(phases, dora_calibration)
+
     # Compute per-phase and aggregate metrics
     computed_phases = []
     total_pt = 0
@@ -64,6 +70,65 @@ async def run_vsm_analyzer(state: VSMAgentState) -> VSMAgentState:
     narrative = await _build_narrative(metrics, state.get("project", {}))
 
     return {**state, "metrics": metrics, "vsm_data": {**vsm_data, "phases": computed_phases}, "narrative": narrative}
+
+
+def _apply_dora_calibration(phases: list, cal: dict) -> list:
+    """
+    Override VSM phase PT/WT with measured DORA values where provided.
+
+    cal keys (all optional, matching doraToVsmCalibration() in DORAAssessmentPage.jsx):
+      phase3_wt          – code review wait time (hours)  → Phase 3 (Continuous Development)
+      phase4_pt          – build / CI duration (hours)    → Phase 4 (Continuous Integration)
+      phase5_rework_factor – CFR-derived rework multiplier on Phase 5 PT
+      phase6_wt          – deploy pipeline wait (hours)   → Phase 6 (Continuous Delivery)
+      phase7_wt          – ops / MTTR wait (hours)        → Phase 7 (Continuous Operations)
+      phases3to6_lt_days – measured LT for change (days)  → proportionally scale phases 3–6 WT
+    """
+    calibrated = []
+    lt_days = cal.get("phases3to6_lt_days")
+
+    # Sum current WT for phases 3–6 to compute a scaling factor
+    current_wt_3to6 = sum(
+        p.get("wait_time", 0) for p in phases
+        if p.get("phase_id") in (3, 4, 5, 6)
+    )
+    lt_scale = None
+    if lt_days and current_wt_3to6 > 0:
+        measured_wt_hours = lt_days * 8  # convert days → hours
+        lt_scale = measured_wt_hours / current_wt_3to6
+
+    for phase in phases:
+        pid = phase.get("phase_id")
+        p = dict(phase)
+
+        if pid == 3 and cal.get("phase3_wt") is not None:
+            p["wait_time"] = float(cal["phase3_wt"])
+            p["dora_calibrated"] = True
+        if pid == 4 and cal.get("phase4_pt") is not None:
+            p["process_time"] = float(cal["phase4_pt"])
+            p["dora_calibrated"] = True
+        if pid == 5 and cal.get("phase5_rework_factor") is not None:
+            p["process_time"] = round(p.get("process_time", 0) * float(cal["phase5_rework_factor"]), 1)
+            p["dora_calibrated"] = True
+        if pid == 6 and cal.get("phase6_wt") is not None:
+            p["wait_time"] = float(cal["phase6_wt"])
+            p["dora_calibrated"] = True
+        if pid == 7 and cal.get("phase7_wt") is not None:
+            p["wait_time"] = float(cal["phase7_wt"])
+            p["dora_calibrated"] = True
+
+        # Apply proportional LT scaling to phases 3–6 where not already overridden
+        if lt_scale and pid in (3, 4, 5, 6) and not p.get("dora_calibrated"):
+            p["wait_time"] = round(p.get("wait_time", 0) * lt_scale, 1)
+            p["dora_calibrated"] = True
+
+        # Recalculate derived fields
+        pt = p.get("process_time", 0)
+        wt = p.get("wait_time", 0)
+        p["lead_time"] = round((pt + wt) / 8, 2)
+        calibrated.append(p)
+
+    return calibrated
 
 
 def _estimate_deployment_freq(lead_time_days: float) -> str:

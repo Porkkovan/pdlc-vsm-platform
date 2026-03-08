@@ -41,8 +41,8 @@ export const vsmApi = {
 
 // ── Multi-Agent Orchestration ─────────────────────────────────────────────
 export const agentsApi = {
-  // Run the full end-to-end analysis pipeline
-  runFullAnalysis:    (projectId) => api.post(`/agents/run-analysis/${projectId}`),
+  // Run the full end-to-end analysis pipeline (optionally with DORA calibration)
+  runFullAnalysis:    (projectId, doraCalibration) => api.post(`/agents/run-analysis/${projectId}`, doraCalibration ? { dora_calibration: doraCalibration } : {}),
   getAnalysisStatus:  (runId)    => api.get(`/agents/status/${runId}`),
   getAnalysisResult:  (projectId) => api.get(`/agents/result/${projectId}`),
 

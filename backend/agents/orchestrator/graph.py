@@ -43,7 +43,7 @@ def build_vsm_graph() -> StateGraph:
     return graph.compile()
 
 
-async def run_full_analysis(project_id: str, project: dict, alm_config: dict = None, vsm_data: dict = None) -> dict:
+async def run_full_analysis(project_id: str, project: dict, alm_config: dict = None, vsm_data: dict = None, dora_calibration: dict = None) -> dict:
     """
     Run the complete multi-agent VSM analysis pipeline.
     Returns the final state with all analysis results.
@@ -51,14 +51,15 @@ async def run_full_analysis(project_id: str, project: dict, alm_config: dict = N
     compiled = build_vsm_graph()
 
     initial_state: VSMAgentState = {
-        "project_id":  project_id,
-        "project":     project,
-        "alm_raw_data": alm_config or {},
-        "vsm_data":    vsm_data or {},
-        "overrides":   {},
-        "errors":      [],
-        "run_id":      str(uuid.uuid4()),
-        "status":      "running"
+        "project_id":       project_id,
+        "project":          project,
+        "alm_raw_data":     alm_config or {},
+        "vsm_data":         vsm_data or {},
+        "overrides":        {},
+        "errors":           [],
+        "run_id":           str(uuid.uuid4()),
+        "status":           "running",
+        "dora_calibration": dora_calibration or {},
     }
 
     final_state = await compiled.ainvoke(initial_state)

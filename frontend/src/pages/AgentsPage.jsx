@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../contexts/AppContext'
 import { agentsApi } from '../services/api'
+import { doraToVsmCalibration } from './DORAAssessmentPage'
 
 const AGENTS = [
   { id: 'alm-connector',        name: 'ALM Connector Agent',       icon: '🔗', desc: 'Connects to Jira/ADO, pulls ticket data, computes PT/WT/LT metrics from ALM history', color: 'blue', endpoint: 'alm' },
@@ -21,7 +22,7 @@ const STATUS_STYLES = {
 }
 
 export default function AgentsPage() {
-  const { agentStatus, updateAgentStatus, addNotification, project } = useApp()
+  const { agentStatus, updateAgentStatus, addNotification, project, doraMetrics } = useApp()
   const [runningAll, setRunningAll] = useState(false)
 
   const runAgent = async (agent) => {
@@ -38,8 +39,9 @@ export default function AgentsPage() {
 
   const runAll = async () => {
     setRunningAll(true)
+    const doraCalibration = doraMetrics ? doraToVsmCalibration(doraMetrics) : null
     try {
-      await agentsApi.runFullAnalysis(project.id || 'demo')
+      await agentsApi.runFullAnalysis(project.id || 'demo', doraCalibration)
       addNotification('Full multi-agent analysis complete!', 'success')
     } catch {
       // Run each agent with delays to show progress

@@ -59,6 +59,54 @@ class AnalysisRun(Base):
     project = relationship("Project", back_populates="analysis_runs")
 
 
+class DevOpsAssessment(Base):
+    __tablename__ = "devops_assessments"
+
+    id             = Column(String, primary_key=True, default=gen_id)
+    project_id     = Column(String, nullable=True)          # optional link to Project
+    organization   = Column(String)
+    portfolio      = Column(String)
+    product_group  = Column(String)
+    team_name      = Column(String)
+    industry       = Column(String)
+    sources        = Column(JSON)                           # [{type, url, label, token}]
+    notes          = Column(Text)
+    status         = Column(String, default="pending")     # pending, running, complete, failed
+    responses      = Column(JSON)                          # {question_id: {manual_score, notes}}
+    result         = Column(JSON)                          # full assessment result
+    created_at     = Column(DateTime, default=datetime.utcnow)
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    action_items   = relationship("AssessmentActionItem", back_populates="assessment", cascade="all, delete-orphan")
+
+
+class AssessmentActionItem(Base):
+    __tablename__ = "assessment_action_items"
+
+    id               = Column(String, primary_key=True, default=gen_id)
+    assessment_id    = Column(String, ForeignKey("devops_assessments.id"), nullable=False)
+    question_id      = Column(String)
+    dimension        = Column(String)
+    competency       = Column(String)
+    title            = Column(String)
+    description      = Column(Text)
+    priority         = Column(String, default="Medium")    # Critical, High, Medium, Low
+    current_score    = Column(Float, default=0)
+    target_score     = Column(Float, default=0)
+    current_level    = Column(String)
+    target_level     = Column(String)
+    suggested_actions = Column(JSON)
+    responsible      = Column(String)
+    target_date      = Column(String)
+    status           = Column(String, default="Open")      # Open, In Progress, Done, Deferred
+    notes            = Column(Text)
+    effort_estimate  = Column(String)
+    created_at       = Column(DateTime, default=datetime.utcnow)
+    updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    assessment = relationship("DevOpsAssessment", back_populates="action_items")
+
+
 class ActivityMetric(Base):
     __tablename__ = "activity_metrics"
 

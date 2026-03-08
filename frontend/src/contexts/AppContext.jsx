@@ -24,6 +24,8 @@ export function AppProvider({ children }) {
   const [customOverrides, setCustomOverrides] = useState({})    // activity-level overrides
   const [notifications, setNotifications] = useState([])
   const [vsmLevel, setVsmLevel]         = useState('feature')   // 'feature' | 'user-story'
+  const [doraMetrics, setDoraMetrics]   = useState(null)        // DORA assessment data
+  const [doraProfile, setDoraProfile]   = useState(null)        // Elite|High|Medium|Low
 
   const addNotification = useCallback((msg, type = 'info') => {
     const id = Date.now()
@@ -54,6 +56,8 @@ export function AppProvider({ children }) {
       notifications, addNotification,
       resetProject,
       vsmLevel, setVsmLevel,
+      doraMetrics, setDoraMetrics,
+      doraProfile, setDoraProfile,
       pdlcPhases: PDLC_PHASES
     }}>
       {children}

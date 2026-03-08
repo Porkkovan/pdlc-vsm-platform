@@ -4,13 +4,14 @@ import { PDLC_PHASES, FUTURE_STATE_SCENARIOS } from '../data/pdlcPhases'
 import { useState } from 'react'
 
 const WORKFLOW_STEPS = [
-  { step: 1, label: 'Connect ALM',         path: '/alm-connect',  icon: '🔗', desc: 'Jira, ADO, CSV' },
-  { step: 2, label: 'Review VSM Data',     path: '/vsm-editor',   icon: '✏️', desc: 'Override / enrich' },
-  { step: 3, label: 'Current State VSM',   path: '/current-vsm',  icon: '🗺️', desc: 'PT, WT, LT, FE' },
-  { step: 4, label: 'Bottleneck Analysis', path: '/bottlenecks',  icon: '⚠️', desc: 'AI-identified gaps' },
-  { step: 5, label: 'Improvements',        path: '/improvements', icon: '🚀', desc: 'GenAI recommendations' },
-  { step: 6, label: 'Future State',        path: '/future-state', icon: '🔮', desc: 'Options A / B / C' },
-  { step: 7, label: 'Business Case',       path: '/business-case',icon: '💼', desc: 'ROI & change plan' }
+  { step: 1, label: 'Connect ALM',         path: '/alm-connect',     icon: '🔗', desc: 'Jira, ADO, CSV' },
+  { step: 2, label: 'DORA Assessment',     path: '/dora-assessment', icon: '📈', desc: 'Calibrate VSM baselines' },
+  { step: 3, label: 'Review VSM Data',     path: '/vsm-editor',      icon: '✏️', desc: 'Override / enrich' },
+  { step: 4, label: 'Current State VSM',   path: '/current-vsm',     icon: '🗺️', desc: 'PT, WT, LT, FE' },
+  { step: 5, label: 'Bottleneck Analysis', path: '/bottlenecks',     icon: '⚠️', desc: 'AI-identified gaps' },
+  { step: 6, label: 'Improvements',        path: '/improvements',    icon: '🚀', desc: 'GenAI recommendations' },
+  { step: 7, label: 'Future State',        path: '/future-state',    icon: '🔮', desc: 'Options A / B / C' },
+  { step: 8, label: 'Business Case',       path: '/business-case',   icon: '💼', desc: 'ROI & change plan' }
 ]
 
 export default function DashboardPage() {

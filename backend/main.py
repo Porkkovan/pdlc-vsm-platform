@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database.db import init_db
 from .core.config import settings
 from .routers import projects, vsm, agents, alm, analysis, health
+from .routers import devops_maturity
+from .routers import accuracy
 
 
 @asynccontextmanager
@@ -28,7 +30,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5175", "http://127.0.0.1:5175"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "http://localhost:5175", "http://127.0.0.1:5175"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -40,3 +42,5 @@ app.include_router(vsm.router,       prefix="/api/v1")
 app.include_router(agents.router,    prefix="/api/v1")
 app.include_router(alm.router,       prefix="/api/v1")
 app.include_router(analysis.router,  prefix="/api/v1")
+app.include_router(devops_maturity.router, prefix="/api/v1")
+app.include_router(accuracy.router,       prefix="/api/v1")

@@ -32,6 +32,9 @@ class VSMAgentState(TypedDict, total=False):
     # Recommendations (consolidated)
     recommendations: list     # All improvement recommendations
 
+    # DORA calibration input (from DORAAssessmentPage)
+    dora_calibration: dict    # {phase3_wt, phase4_pt, phase5_rework_factor, phase6_wt, phase7_wt, phases3to6_lt_days}
+
     # Run metadata
     errors:       list        # Per-agent errors (non-fatal)
     run_id:       str

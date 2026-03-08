@@ -3,6 +3,7 @@ import { useApp } from '../contexts/AppContext'
 import { PDLC_PHASES, FUTURE_STATE_SCENARIOS } from '../data/pdlcPhases'
 import { agentsApi } from '../services/api'
 import { Link } from 'react-router-dom'
+import VSMVisualFlow from '../components/vsm/VSMVisualFlow'
 
 // Feature-level base metrics (all 7 phases)
 const FEATURE_METRICS = { leadTime: 42.5, processTime: 100, waitTime: 536, flowEfficiency: 8.1 }
@@ -16,6 +17,7 @@ export default function FutureStatePage() {
   const { activeScenario, setActiveScenario, addNotification, project, vsmLevel } = useApp()
   const [running, setRunning]   = useState(false)
   const [openPhase, setOpenPhase] = useState(null)
+  const [futureView, setFutureView] = useState('visual') // 'visual' | 'table'
 
   const scenario    = FUTURE_STATE_SCENARIOS.find(s => s.id === activeScenario)
   const baseMetrics = vsmLevel === 'user-story' ? STORY_METRICS : FEATURE_METRICS
@@ -64,6 +66,47 @@ export default function FutureStatePage() {
   const visiblePhases = vsmLevel === 'user-story'
     ? PDLC_PHASES.filter(p => STORY_PHASES.has(p.id))
     : PDLC_PHASES
+
+  // Build visual flow phases for the active scenario
+  const buildVisualPhases = (scen) => {
+    const cfg = { 'option-a': 40, 'option-b': 65, 'option-c': 85 }
+    const automationPct = cfg[scen.id] || 40
+    const scale = vsmLevel === 'user-story' ? 0.4 : 1.0
+    return visiblePhases.map(phase => {
+      const isAI = scen.aiAgents.some(ag =>
+        phase.activities.some(act => act.agent === ag)
+      )
+      const ptFactor = isAI ? (1 - automationPct / 100 * 0.9) : 0.9
+      const wtFactor = isAI ? (1 - automationPct / 100 * 0.85) : 0.7
+      const currPT = phase.activities.reduce((s, a) => s + (a.defaultEffort.min + a.defaultEffort.max) / 2 * scale, 0)
+      const currWT = phase.activities.reduce((s, a) => s + (a.defaultWait.min  + a.defaultWait.max)  / 2 * 8 * scale, 0)
+      const futurePT = +(currPT * ptFactor).toFixed(1)
+      const futureWT = +(currWT * wtFactor).toFixed(1)
+      const futFE = (futurePT + futureWT) > 0 ? futurePT / (futurePT + futureWT) * 100 : 0
+      const aiAgent = isAI
+        ? (scen.aiAgents.find(ag => phase.activities.some(act => act.agent === ag)) || null)
+        : null
+      return {
+        id: phase.id, name: phase.name,
+        processTime: futurePT, waitTime: futureWT,
+        currPT, currWT,
+        isBottleneck: futFE < 20,
+        aiAgent,
+      }
+    })
+  }
+
+  const currentVisualPhases = visiblePhases.map(phase => {
+    const scale = vsmLevel === 'user-story' ? 0.4 : 1.0
+    const pt = phase.activities.reduce((s, a) => s + (a.defaultEffort.min + a.defaultEffort.max) / 2 * scale, 0)
+    const wt = phase.activities.reduce((s, a) => s + (a.defaultWait.min  + a.defaultWait.max)  / 2 * 8 * scale, 0)
+    const fe = (pt + wt) > 0 ? pt / (pt + wt) * 100 : 0
+    return { id: phase.id, name: phase.name, processTime: pt, waitTime: wt, isBottleneck: fe < 30 }
+  })
+
+  const currentTotalPT = currentVisualPhases.reduce((s, p) => s + p.processTime, 0)
+  const currentTotalWT = currentVisualPhases.reduce((s, p) => s + p.waitTime, 0)
+  const currentFE = (currentTotalPT / (currentTotalPT + currentTotalWT) * 100).toFixed(1)
 
   return (
     <div className="space-y-6 fade-in">
@@ -115,6 +158,123 @@ export default function FutureStatePage() {
           </button>
         ))}
       </div>
+
+      {/* Visual Flow toggle */}
+      {scenario && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold text-gray-700">
+            {scenario.label} — Value Stream Map Visualization
+          </div>
+          <div className="flex bg-gray-100 rounded-lg overflow-hidden text-sm border border-gray-200">
+            {[['visual','🗺 Visual Flow'],['table','📋 Phase Table']].map(([v,l]) => (
+              <button key={v} onClick={() => setFutureView(v)}
+                className={`px-3 py-1.5 font-semibold text-xs transition-colors ${futureView===v ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Current State Visual (reference) */}
+      {scenario && futureView === 'visual' && (
+        <div>
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 pl-1">
+            Current State (Baseline)
+          </div>
+          <VSMVisualFlow
+            mode="current"
+            phases={currentVisualPhases}
+            totalPT={currentTotalPT}
+            totalWT={currentTotalWT}
+            flowEfficiency={currentFE}
+          />
+        </div>
+      )}
+
+      {/* Future State Visual — active scenario */}
+      {scenario && futureView === 'visual' && (() => {
+        const fPhases = buildVisualPhases(scenario)
+        const fTotalPT = fPhases.reduce((s, p) => s + p.processTime, 0)
+        const fTotalWT = fPhases.reduce((s, p) => s + p.waitTime, 0)
+        const fFE = (fTotalPT / (fTotalPT + fTotalWT) * 100).toFixed(1)
+        return (
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 pl-1">
+              {scenario.label} — {scenario.title}
+            </div>
+            <VSMVisualFlow
+              mode="future"
+              scenarioLabel={`${scenario.label} · ${scenario.automationLevel}% AI Automation`}
+              phases={fPhases}
+              totalPT={fTotalPT}
+              totalWT={fTotalWT}
+              flowEfficiency={fFE}
+            />
+          </div>
+        )
+      })()}
+
+      {/* All 3 scenarios side-by-side summary when in visual mode */}
+      {scenario && futureView === 'visual' && (
+        <div className="card card-body">
+          <h3 className="font-bold text-gray-800 mb-4">All 3 Future State Options — Flow Efficiency Comparison</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {FUTURE_STATE_SCENARIOS.map(scen => {
+              const fp = buildVisualPhases(scen)
+              const fpt = fp.reduce((s, p) => s + p.processTime, 0)
+              const fwt = fp.reduce((s, p) => s + p.waitTime, 0)
+              const ffe = (fpt / (fpt + fwt) * 100).toFixed(1)
+              const flt = ((fpt + fwt) / 8).toFixed(1)
+              const aiCount = fp.filter(p => p.aiAgent).length
+              return (
+                <button
+                  key={scen.id}
+                  onClick={() => setActiveScenario(scen.id)}
+                  className={`text-left rounded-xl p-4 border-2 transition-all ${
+                    activeScenario === scen.id
+                      ? 'border-violet-500 bg-violet-50'
+                      : 'border-gray-200 bg-gray-50 hover:border-violet-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="bg-violet-600 text-white px-2 py-0.5 rounded font-bold text-sm">{scen.label}</span>
+                    <span className="text-xs text-gray-500">{scen.automationLevel}% AI</span>
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Flow Efficiency</span>
+                      <span className="font-bold text-green-600">{ffe}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Lead Time</span>
+                      <span className="font-bold text-blue-600">{flt}d</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">AI-Automated Phases</span>
+                      <span className="font-bold text-purple-600">{aiCount}/{fp.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">FE vs Current</span>
+                      <span className="font-bold text-emerald-600">+{(parseFloat(ffe) - parseFloat(currentFE)).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  {/* Mini FE bar */}
+                  <div className="mt-3">
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-violet-500 to-green-500 rounded-full"
+                        style={{ width: `${Math.min(parseFloat(ffe), 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+                      <span>0%</span><span>100%</span>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Scenario detail */}
       {scenario && (
@@ -195,7 +355,7 @@ export default function FutureStatePage() {
           )}
 
           {/* Future VSM by phase — with current vs future PT/WT */}
-          <div className="card">
+          {futureView === 'table' && <div className="card">
             <div className="card-header">
               <h3 className="font-bold text-gray-800">Future State Value Stream — Phase by Phase</h3>
               <p className="text-xs text-gray-500">Current PT/WT shown alongside predicted future values for each phase and activity</p>
@@ -301,7 +461,7 @@ export default function FutureStatePage() {
                 )
               })}
             </div>
-          </div>
+          </div>}
         </>
       )}
 
