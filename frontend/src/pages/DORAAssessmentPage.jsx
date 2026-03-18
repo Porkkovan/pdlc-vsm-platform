@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useApp } from '../contexts/AppContext'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { US_BANK_DEMO } from '../data/demoData'
 
-// ─── DORA Benchmark bands (2024 State of DevOps) ────────────────────────────
+// ─── DORA Benchmark bands ────────────────────────────────────────────────────
 const DORA_BANDS = {
   Elite:  { color: 'green',  bg: 'bg-green-50',  border: 'border-green-400', badge: 'bg-green-600',  label: 'Elite Performer' },
   High:   { color: 'blue',   bg: 'bg-blue-50',   border: 'border-blue-400',  badge: 'bg-blue-600',   label: 'High Performer' },
@@ -10,41 +11,26 @@ const DORA_BANDS = {
   Low:    { color: 'red',    bg: 'bg-red-50',    border: 'border-red-400',   badge: 'bg-red-600',    label: 'Low Performer' },
 }
 
-// Score each DORA metric 0–4, average → band
 const DEPLOY_FREQ_SCORES = {
-  'Multiple per day':    4,
-  'Once per day':        3.5,
-  'Several per week':    3,
-  'Once per week':       2.5,
-  'Once per 2 weeks':    2,
-  'Once per month':      1,
-  'Less than monthly':   0,
+  'Multiple per day': 4, 'Once per day': 3.5, 'Several per week': 3,
+  'Once per week': 2.5, 'Once per 2 weeks': 2, 'Once per month': 1, 'Less than monthly': 0,
 }
 const LT_CHANGE_SCORES = {
-  'Less than 1 hour':    4,
-  '1–24 hours':          3.5,
-  '1–7 days':            3,
-  '1–2 weeks':           2,
-  '1 month':             1,
-  '2–6 months':          0.5,
-  'More than 6 months':  0,
+  'Less than 1 hour': 4, '1–24 hours': 3.5, '1–7 days': 3,
+  '1–2 weeks': 2, '1 month': 1, '2–6 months': 0.5, 'More than 6 months': 0,
 }
 const CFR_SCORES     = (pct) => pct <= 5 ? 4 : pct <= 10 ? 3 : pct <= 15 ? 2 : pct <= 30 ? 1 : 0
 const MTTR_SCORES = {
-  'Less than 1 hour':   4,
-  '1–24 hours':         3,
-  '1–7 days':           2,
-  '1–4 weeks':          1,
-  'More than 1 month':  0,
+  'Less than 1 hour': 4, '1–24 hours': 3, '1–7 days': 2, '1–4 weeks': 1, 'More than 1 month': 0,
 }
 
 function calcProfile(m) {
   const scores = []
   if (m.deployFreq)    scores.push(DEPLOY_FREQ_SCORES[m.deployFreq] ?? 2)
-  if (m.leadTimeChange)scores.push(LT_CHANGE_SCORES[m.leadTimeChange] ?? 2)
+  if (m.leadTimeChange) scores.push(LT_CHANGE_SCORES[m.leadTimeChange] ?? 2)
   if (m.changeFailRate !== '') scores.push(CFR_SCORES(Number(m.changeFailRate) || 0))
   if (m.mttr)          scores.push(MTTR_SCORES[m.mttr] ?? 2)
-  if (!scores.length) return null
+  if (!scores.length)  return null
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length
   if (avg >= 3.5) return 'Elite'
   if (avg >= 2.5) return 'High'
@@ -52,86 +38,133 @@ function calcProfile(m) {
   return 'Low'
 }
 
-// ─── VSM calibration mapping ──────────────────────────────────────────────
 export function doraToVsmCalibration(m) {
   const cal = {}
-  // Phase 6 (Delivery) WT — from deploy frequency
   const deployWtMap = {
-    'Multiple per day': 1,   'Once per day': 4,   'Several per week': 12,
-    'Once per week': 24,     'Once per 2 weeks': 40, 'Once per month': 80, 'Less than monthly': 160
+    'Multiple per day': 1, 'Once per day': 4, 'Several per week': 12,
+    'Once per week': 24, 'Once per 2 weeks': 40, 'Once per month': 80, 'Less than monthly': 160
   }
-  if (m.deployFreq) cal.phase6_wt = deployWtMap[m.deployFreq]
-
-  // Phase 7 (Monitoring) WT — from MTTR
+  if (m.deployFreq)    cal.phase6_wt = deployWtMap[m.deployFreq]
   const mttrWtMap = {
-    'Less than 1 hour': 2, '1–24 hours': 8, '1–7 days': 24,
-    '1–4 weeks': 60, 'More than 1 month': 120
+    'Less than 1 hour': 2, '1–24 hours': 8, '1–7 days': 24, '1–4 weeks': 60, 'More than 1 month': 120
   }
-  if (m.mttr) cal.phase7_wt = mttrWtMap[m.mttr]
-
-  // Phase 4 (CI) PT — from build duration
-  if (m.buildDuration) cal.phase4_pt = Math.round(Number(m.buildDuration) / 60 * 8)  // 8 builds/day estimate
-
-  // Phase 3 (Code) WT — from code review cycle time
+  if (m.mttr)          cal.phase7_wt = mttrWtMap[m.mttr]
+  if (m.buildDuration) cal.phase4_pt = Math.round(Number(m.buildDuration) / 60 * 8)
   if (m.codeReviewHours) cal.phase3_wt = Number(m.codeReviewHours)
-
-  // Phase 5 (Testing) additional PT — from CFR (rework)
-  if (m.changeFailRate) {
-    const cfr = Number(m.changeFailRate) / 100
-    cal.phase5_rework_factor = 1 + cfr * 0.5  // each failure adds 50% extra PT
-  }
-
-  // LT for Change directly maps to phases 3-6 LT
+  if (m.changeFailRate) cal.phase5_rework_factor = 1 + (Number(m.changeFailRate) / 100) * 0.5
   const ltDaysMap = {
     'Less than 1 hour': 0.1, '1–24 hours': 0.5, '1–7 days': 3,
     '1–2 weeks': 10, '1 month': 22, '2–6 months': 60, 'More than 6 months': 120
   }
   if (m.leadTimeChange) cal.phases3to6_lt_days = ltDaysMap[m.leadTimeChange]
-
   return cal
 }
 
-// ─── Profile improvement recommendations ────────────────────────────────────
 const PROFILE_RECS = {
-  Elite:  {
-    vsm_note: 'Your delivery performance is already at world-class level. VSM will focus on phases 1–2 (product definition) and eliminating remaining manual approval gates.',
-    option_rec: 'Option C (AI-First)',
-    priority_phases: [1, 2, 7],
-    key_gap: 'Focus: further reduce planning cycle and automate remaining human gates in phases 1–2'
-  },
-  High: {
-    vsm_note: 'Strong delivery performance. VSM will identify remaining wait time in testing and planning phases.',
-    option_rec: 'Option B or C',
-    priority_phases: [1, 2, 5],
-    key_gap: 'Focus: reduce planning WT (phases 1–2) and testing approval gates (phase 5)'
-  },
-  Medium: {
-    vsm_note: 'Significant bottlenecks in release process and testing. VSM will confirm which phases are the primary drag.',
-    option_rec: 'Option A or B',
-    priority_phases: [5, 6, 3],
-    key_gap: 'Focus: automate testing signoff (phase 5), release gating (phase 6), and code review (phase 3)'
-  },
-  Low: {
-    vsm_note: 'Substantial transformation needed across delivery pipeline. VSM will map multiple compounding bottlenecks.',
-    option_rec: 'Option A (start), then B',
-    priority_phases: [3, 4, 5, 6],
-    key_gap: 'Focus: build CI/CD foundation first (phases 3–6) before adding AI automation'
-  }
+  Elite:  { vsm_note: 'World-class delivery. VSM focuses on phases 1–2 (product definition) and remaining approval gates.', option_rec: 'Option C (AI-First / ADLC)', priority_phases: [1, 2, 7], key_gap: 'Eliminate remaining planning cycle waste and automate final human gates' },
+  High:   { vsm_note: 'Strong performance. VSM will surface remaining wait time in testing and planning phases.', option_rec: 'Option B or C', priority_phases: [1, 2, 5], key_gap: 'Reduce planning WT (phases 1–2) and testing approval gates (phase 5)' },
+  Medium: { vsm_note: 'Significant bottlenecks in testing and release. VSM confirms which phases are the primary drag.', option_rec: 'Option A or B', priority_phases: [5, 6, 3], key_gap: 'Automate testing signoff (phase 5), release gating (phase 6), code review (phase 3)' },
+  Low:    { vsm_note: 'Substantial transformation needed. Multiple compounding bottlenecks across delivery pipeline.', option_rec: 'Option A (start), then B', priority_phases: [3, 4, 5, 6], key_gap: 'Build CI/CD foundation first (phases 3–6) before adding AI automation' },
 }
 
 const PHASE_NAMES = { 1: 'Backlog & Roadmap', 2: 'Architecture & UX', 3: 'Code Management', 4: 'Continuous Integration', 5: 'Continuous Testing', 6: 'Continuous Delivery', 7: 'Monitoring & Feedback' }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+const CONFIDENCE_COLOR = (c) => c >= 90 ? 'text-green-600' : c >= 75 ? 'text-blue-600' : 'text-amber-600'
+const CONFIDENCE_BG    = (c) => c >= 90 ? 'bg-green-50 border-green-200' : c >= 75 ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'
+
+// Map metric key → notes key
+const METRIC_NOTES_MAP = {
+  deployFreq:        'deployFreq',
+  leadTimeChange:    'leadTimeChange',
+  changeFailRate:    'changeFailRate',
+  mttr:              'mttr',
+  buildDuration:     'buildDuration',
+  codeReviewHours:   'codeReviewHours',
+  testCoverage:      'testCoverage',
+  automatedTestPct:  'automatedTestPct',
+  infraAutomationPct:'infraAutomationPct',
+}
+
+// ─── SourceNote component ─────────────────────────────────────────────────────
+function SourceNote({ metricKey, notes, accepted, onAccept, onOverride }) {
+  const n = notes?.[metricKey]
+  const [showSources, setShowSources] = useState(false)
+  if (!n) return null
+  return (
+    <div className={`mt-2 rounded-xl border p-3 ${CONFIDENCE_BG(n.confidence)}`}>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-gray-600">🤖 AI Suggested:</span>
+          <span className="text-xs font-bold text-blue-700">{n.aiSuggestedValue}</span>
+          <span className={`text-xs font-semibold ${CONFIDENCE_COLOR(n.confidence)}`}>
+            {n.confidence}% confidence
+          </span>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          {!accepted ? (
+            <>
+              <button onClick={onAccept}
+                className="text-xs px-2 py-0.5 bg-green-600 text-white rounded font-semibold hover:bg-green-700">
+                ✓ Accept
+              </button>
+              <button onClick={onOverride}
+                className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300">
+                Override
+              </button>
+            </>
+          ) : (
+            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">✓ Accepted</span>
+          )}
+        </div>
+      </div>
+
+      {/* Root cause / gap */}
+      <div className="mb-2">
+        <div className="text-xs font-semibold text-red-600 mb-0.5">⚠ Root Cause / Gap:</div>
+        <p className="text-xs text-gray-700 leading-relaxed">{n.rootCause}</p>
+      </div>
+
+      {n.gap && (
+        <div className="mb-2 bg-white/70 rounded-lg px-2.5 py-1.5 border border-gray-200">
+          <div className="text-xs font-semibold text-blue-600 mb-0.5">📊 Improvement Opportunity:</div>
+          <p className="text-xs text-gray-600">{n.gap}</p>
+        </div>
+      )}
+
+      {/* Sources */}
+      <button onClick={() => setShowSources(s => !s)}
+        className="text-xs text-blue-500 hover:text-blue-700 font-semibold">
+        {showSources ? '▲ Hide sources' : `▼ Show ${n.sources?.length || 0} source documents`}
+      </button>
+      {showSources && n.sources && (
+        <div className="mt-2 space-y-1.5">
+          {n.sources.map((src, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-2.5">
+              <div className="text-xs font-bold text-gray-700 mb-0.5">📄 {src.doc}</div>
+              <div className="text-xs text-gray-600">{src.finding}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function DORAAssessmentPage() {
-  const { doraMetrics, setDoraMetrics, doraProfile, setDoraProfile, addNotification, project } = useApp()
-  const navigate = useNavigate()
+  const { doraMetrics, setDoraMetrics, doraProfile, setDoraProfile, addNotification, project,
+          saveProject, setVsmLevel } = useApp()
 
   const [m, setM] = useState(doraMetrics || {
     deployFreq: '', leadTimeChange: '', changeFailRate: '', mttr: '',
     buildDuration: '', codeReviewHours: '', testCoverage: '', mttd: '',
     automatedTestPct: '', infraAutomationPct: '', incidentFreq: '',
   })
-  const [saved, setSaved] = useState(!!doraMetrics)
+  const [saved, setSaved]           = useState(!!doraMetrics)
+  const [aiNotes, setAiNotes]       = useState(null)   // null = not loaded, {} = loaded
+  const [accepted, setAccepted]     = useState({})     // which metrics user accepted
+  const [aiLoading, setAiLoading]   = useState(false)
+  const [showNotes, setShowNotes]   = useState(true)
 
   const profile = calcProfile(m)
   const band    = profile ? DORA_BANDS[profile] : null
@@ -146,37 +179,134 @@ export default function DORAAssessmentPage() {
     addNotification(`DORA profile: ${profile} — VSM calibration applied`, 'success')
   }
 
-  // Number of metrics filled
-  const coreCount  = [m.deployFreq, m.leadTimeChange, m.changeFailRate, m.mttr].filter(Boolean).length
-  const extCount   = [m.buildDuration, m.codeReviewHours, m.testCoverage, m.mttd, m.automatedTestPct, m.infraAutomationPct].filter(Boolean).length
+  // ── Load demo data (US Bank) ──────────────────────────────────────────────
+  const loadDemoData = async () => {
+    setAiLoading(true)
+    await new Promise(r => setTimeout(r, 800)) // simulate AI analysis
+    const dm = US_BANK_DEMO.doraMetrics
+    setM(dm)
+    setAiNotes(US_BANK_DEMO.doraAutoScoreNotes)
+    setAccepted({})
+    // also pre-fill project if empty
+    if (!project.organization) {
+      saveProject(US_BANK_DEMO.project).catch(() => {})
+    }
+    setAiLoading(false)
+    addNotification('US Bank demo data loaded — AI analysis ready for review', 'success')
+  }
+
+  // ── Accept a single AI suggestion ─────────────────────────────────────────
+  const acceptOne = (key) => {
+    if (!aiNotes?.[key]) return
+    setAccepted(a => ({ ...a, [key]: true }))
+    // value already set from loadDemoData — just mark accepted
+  }
+
+  // ── Accept all suggestions ────────────────────────────────────────────────
+  const acceptAll = () => {
+    if (!aiNotes) return
+    const all = {}
+    Object.keys(aiNotes).forEach(k => { all[k] = true })
+    setAccepted(all)
+    addNotification('All AI suggestions accepted', 'success')
+  }
+
+  // ── Override (clear acceptance) ───────────────────────────────────────────
+  const overrideOne = (key) => setAccepted(a => ({ ...a, [key]: false }))
+
+  const coreCount = [m.deployFreq, m.leadTimeChange, m.changeFailRate, m.mttr].filter(Boolean).length
+  const extCount  = [m.buildDuration, m.codeReviewHours, m.testCoverage, m.mttd, m.automatedTestPct, m.infraAutomationPct].filter(Boolean).length
+  const acceptedCount = Object.values(accepted).filter(Boolean).length
+  const totalNotes = Object.keys(aiNotes || {}).length
 
   return (
     <div className="space-y-6 fade-in">
+
       {/* Header */}
       <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-2xl font-bold mb-1">DORA Assessment</h2>
             <p className="text-cyan-100 text-sm">
-              Measure your DevOps delivery performance before creating the current state VSM.
-              DORA metrics replace estimated ranges with <strong>measured actuals</strong> — improving VSM accuracy from ~65% to 85%+.
+              Baseline your DevOps performance before creating the current state VSM.
+              AI auto-scores each metric from uploaded data sources — review root causes, validate sources, then apply calibration.
             </p>
           </div>
-          {saved && profile && (
-            <div className={`${band.badge} text-white px-4 py-2 rounded-xl font-bold text-sm shadow`}>
-              {profile} Performer ✓
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {saved && profile && (
+              <div className={`${band.badge} text-white px-4 py-2 rounded-xl font-bold text-sm shadow`}>
+                {profile} Performer ✓
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Why DORA + VSM explanation */}
+      {/* AI Auto-Score panel */}
+      <div className={`border-2 rounded-2xl p-5 ${aiNotes ? 'border-blue-300 bg-blue-50' : 'border-dashed border-gray-300 bg-gray-50'}`}>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">🤖</span>
+              <h3 className="font-bold text-gray-800">AI Auto-Score from Data Sources</h3>
+              {aiNotes && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded font-bold">Active — {acceptedCount}/{totalNotes} accepted</span>}
+            </div>
+            <p className="text-sm text-gray-600">
+              {aiNotes
+                ? 'AI has analysed uploaded data sources (Jira, GitHub, PagerDuty, SonarQube) and suggested DORA scores with root cause explanations. Review each metric, validate the source evidence, then accept or override.'
+                : 'Load demo data to see AI-suggested DORA scores with source evidence and root cause analysis per metric. In live mode, connect your ALM tool and upload data sources first.'}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            {aiNotes && (
+              <>
+                <button onClick={() => setShowNotes(s => !s)}
+                  className="text-xs px-3 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
+                  {showNotes ? '▲ Hide Notes' : '▼ Show Notes'}
+                </button>
+                <button onClick={acceptAll}
+                  className="text-xs px-3 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
+                  ✓ Accept All ({totalNotes - acceptedCount} remaining)
+                </button>
+              </>
+            )}
+            <button onClick={loadDemoData} disabled={aiLoading}
+              className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 shadow">
+              {aiLoading ? '⏳ Analysing...' : '🏦 Load US Bank Demo Data'}
+            </button>
+          </div>
+        </div>
+
+        {aiNotes && showNotes && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { key: 'deployFreq',    label: 'Deploy Frequency',        icon: '🚀' },
+              { key: 'leadTimeChange',label: 'Lead Time for Change',     icon: '⏱' },
+              { key: 'changeFailRate',label: 'Change Failure Rate',      icon: '⚠️' },
+              { key: 'mttr',          label: 'MTTR',                     icon: '🔧' },
+            ].filter(f => aiNotes[f.key]).map(f => (
+              <div key={f.key} className="bg-white rounded-xl border border-gray-200 p-3">
+                <div className="text-sm font-bold text-gray-800 mb-1">{f.icon} {f.label}</div>
+                <SourceNote
+                  metricKey={f.key}
+                  notes={aiNotes}
+                  accepted={accepted[f.key]}
+                  onAccept={() => acceptOne(f.key)}
+                  onOverride={() => overrideOne(f.key)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Why DORA maps to VSM */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {[
-          { metric: 'Deployment Frequency', feeds: 'Phase 6 Wait Time', icon: '🚀', desc: 'Weekly deploys → 40h WT in delivery phase' },
+          { metric: 'Deployment Frequency', feeds: 'Phase 6 Wait Time', icon: '🚀', desc: 'Weekly deploys → 24h release gate WT' },
           { metric: 'Lead Time for Change', feeds: 'Phases 3–6 Total LT', icon: '⏱', desc: 'Commit-to-prod time calibrates 4 phases' },
-          { metric: 'Change Failure Rate', feeds: 'Phase 5 Rework PT', icon: '⚠️', desc: 'Each failure adds ~50% rework to testing PT' },
-          { metric: 'MTTR',                feeds: 'Phase 7 Wait Time', icon: '🔧', desc: 'Recovery time calibrates monitoring phase WT' },
+          { metric: 'Change Failure Rate',  feeds: 'Phase 5 Rework PT', icon: '⚠️', desc: 'Each failure adds ~50% rework to testing PT' },
+          { metric: 'MTTR',                 feeds: 'Phase 7 Wait Time', icon: '🔧', desc: 'Recovery time calibrates monitoring phase WT' },
         ].map(d => (
           <div key={d.metric} className="bg-white border border-gray-200 rounded-xl p-4">
             <div className="text-2xl mb-2">{d.icon}</div>
@@ -191,7 +321,7 @@ export default function DORAAssessmentPage() {
       <div className="card">
         <div className="card-header">
           <h3 className="font-bold text-gray-800">Core DORA Metrics ({coreCount}/4)</h3>
-          <p className="text-xs text-gray-500">The 4 official DORA metrics from the State of DevOps research (Accelerate, DORA 2024)</p>
+          <p className="text-xs text-gray-500">The 4 official DORA metrics — each maps to a specific VSM phase calibration</p>
         </div>
         <div className="card-body grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Deployment Frequency */}
@@ -211,6 +341,10 @@ export default function DORAAssessmentPage() {
               <span className="text-amber-600">Med: Weekly</span>
               <span className="text-red-600">Low: Monthly+</span>
             </div>
+            {aiNotes && showNotes && (
+              <SourceNote metricKey="deployFreq" notes={aiNotes} accepted={accepted.deployFreq}
+                onAccept={() => acceptOne('deployFreq')} onOverride={() => overrideOne('deployFreq')} />
+            )}
           </div>
 
           {/* Lead Time for Change */}
@@ -230,6 +364,10 @@ export default function DORAAssessmentPage() {
               <span className="text-amber-600">Med: &lt;1 week</span>
               <span className="text-red-600">Low: 1 month+</span>
             </div>
+            {aiNotes && showNotes && (
+              <SourceNote metricKey="leadTimeChange" notes={aiNotes} accepted={accepted.leadTimeChange}
+                onAccept={() => acceptOne('leadTimeChange')} onOverride={() => overrideOne('leadTimeChange')} />
+            )}
           </div>
 
           {/* Change Failure Rate */}
@@ -251,6 +389,10 @@ export default function DORAAssessmentPage() {
               <span className="text-amber-600">Med: 10–15%</span>
               <span className="text-red-600">Low: &gt;15%</span>
             </div>
+            {aiNotes && showNotes && (
+              <SourceNote metricKey="changeFailRate" notes={aiNotes} accepted={accepted.changeFailRate}
+                onAccept={() => acceptOne('changeFailRate')} onOverride={() => overrideOne('changeFailRate')} />
+            )}
           </div>
 
           {/* MTTR */}
@@ -270,36 +412,44 @@ export default function DORAAssessmentPage() {
               <span className="text-amber-600">Med: &lt;1 week</span>
               <span className="text-red-600">Low: &gt;1 week</span>
             </div>
+            {aiNotes && showNotes && (
+              <SourceNote metricKey="mttr" notes={aiNotes} accepted={accepted.mttr}
+                onAccept={() => acceptOne('mttr')} onOverride={() => overrideOne('mttr')} />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Extended DORA metrics */}
+      {/* Extended metrics */}
       <div className="card">
         <div className="card-header">
           <h3 className="font-bold text-gray-800">Extended Metrics ({extCount}/6) — VSM Phase Calibration</h3>
-          <p className="text-xs text-gray-500">These replace estimated PT/WT ranges with your measured actuals — each metric calibrates a specific VSM phase</p>
+          <p className="text-xs text-gray-500">Measured actuals that replace estimated PT/WT ranges in the VSM — each metric calibrates a specific phase</p>
         </div>
         <div className="card-body grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[
-            { key: 'buildDuration',      label: 'Average CI Build Duration', unit: 'minutes', placeholder: 'e.g. 18',  calibrates: 'Phase 4 PT', hint: 'Average successful build time from git push to pipeline complete' },
-            { key: 'codeReviewHours',    label: 'Code Review Cycle Time',    unit: 'hours',   placeholder: 'e.g. 6',   calibrates: 'Phase 3 WT', hint: 'PR opened to first review comment (P50 / median)' },
-            { key: 'testCoverage',       label: 'Automated Test Coverage',   unit: '%',       placeholder: 'e.g. 68',  calibrates: 'Phase 5 WT', hint: 'Percentage of code covered by automated tests' },
-            { key: 'mttd',               label: 'MTTD (Mean Time to Detect)',unit: 'hours',   placeholder: 'e.g. 4',   calibrates: 'Phase 7 WT', hint: 'Time from failure occurs to alert firing' },
-            { key: 'automatedTestPct',   label: 'Automated Test Execution %',unit: '%',       placeholder: 'e.g. 55',  calibrates: 'Phase 5 PT', hint: 'Percentage of test execution that is fully automated' },
-            { key: 'infraAutomationPct', label: 'Infrastructure Automation', unit: '%',       placeholder: 'e.g. 70',  calibrates: 'Phase 6 PT', hint: 'Percentage of infra provisioned via IaC (Terraform, ARM, CDK)' },
+            { key: 'buildDuration',      label: 'Average CI Build Duration', unit: 'minutes', placeholder: 'e.g. 18', calibrates: 'Phase 4 PT', hint: 'P50 build time from git push to pipeline complete' },
+            { key: 'codeReviewHours',    label: 'Code Review Cycle Time',    unit: 'hours',   placeholder: 'e.g. 6',  calibrates: 'Phase 3 WT', hint: 'PR opened to first review comment (P50 median)' },
+            { key: 'testCoverage',       label: 'Automated Test Coverage',   unit: '%',       placeholder: 'e.g. 68', calibrates: 'Phase 5 WT', hint: 'Percentage of code covered by automated tests' },
+            { key: 'mttd',               label: 'MTTD (Mean Time to Detect)',unit: 'hours',   placeholder: 'e.g. 4',  calibrates: 'Phase 7 WT', hint: 'Time from failure to alert firing (P50)' },
+            { key: 'automatedTestPct',   label: 'Automated Test Execution %',unit: '%',       placeholder: 'e.g. 55', calibrates: 'Phase 5 PT', hint: 'Percentage of test execution that is fully automated' },
+            { key: 'infraAutomationPct', label: 'Infrastructure Automation', unit: '%',       placeholder: 'e.g. 70', calibrates: 'Phase 6 PT', hint: 'Percentage of infra provisioned via IaC (Terraform, ARM, CDK)' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-xs font-bold text-gray-700 block mb-0.5">{f.label}</label>
               <div className="text-xs text-blue-600 mb-1 font-semibold">→ calibrates {f.calibrates}</div>
               <div className="relative">
-                <input type="number" min="0" value={m[f.key]}
+                <input type="number" min="0" value={m[f.key] || ''}
                   onChange={e => setF(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 pr-14" />
                 <span className="absolute right-3 top-2.5 text-gray-400 text-xs">{f.unit}</span>
               </div>
               <div className="text-xs text-gray-400 mt-1">{f.hint}</div>
+              {aiNotes && showNotes && aiNotes[f.key] && (
+                <SourceNote metricKey={f.key} notes={aiNotes} accepted={accepted[f.key]}
+                  onAccept={() => acceptOne(f.key)} onOverride={() => overrideOne(f.key)} />
+              )}
             </div>
           ))}
         </div>
@@ -309,19 +459,15 @@ export default function DORAAssessmentPage() {
       {profile && band && rec && (
         <div className={`${band.bg} border-2 ${band.border} rounded-2xl p-6`}>
           <div className="flex items-start gap-5 flex-wrap">
-            {/* Profile badge */}
             <div className="text-center">
               <div className={`${band.badge} text-white text-3xl font-black w-24 h-24 rounded-2xl flex items-center justify-center shadow-lg`}>
                 {profile[0]}
               </div>
               <div className={`text-sm font-bold mt-2 text-${band.color}-800`}>{band.label}</div>
             </div>
-
-            {/* Classification detail */}
             <div className="flex-1 min-w-0">
               <h3 className={`font-bold text-${band.color}-800 text-lg mb-2`}>DORA Profile: {profile} Performer</h3>
               <p className={`text-sm text-${band.color}-700 mb-4`}>{rec.vsm_note}</p>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                 <div className="bg-white/70 rounded-xl p-3 border border-white/50">
                   <div className="text-xs text-gray-500 mb-0.5">Recommended Scenario</div>
@@ -332,8 +478,6 @@ export default function DORAAssessmentPage() {
                   <div className="font-semibold text-gray-800 text-sm">{rec.key_gap}</div>
                 </div>
               </div>
-
-              {/* Priority phases */}
               <div>
                 <div className="text-xs font-semibold text-gray-600 mb-2">VSM phases requiring most attention for your profile:</div>
                 <div className="flex flex-wrap gap-2">
@@ -349,6 +493,32 @@ export default function DORAAssessmentPage() {
         </div>
       )}
 
+      {/* Validation status banner (when AI notes loaded) */}
+      {aiNotes && (
+        <div className={`rounded-xl border px-4 py-3 flex items-center justify-between flex-wrap gap-3 ${
+          acceptedCount === totalNotes
+            ? 'bg-green-50 border-green-300'
+            : 'bg-amber-50 border-amber-300'
+        }`}>
+          <div>
+            <div className={`font-bold text-sm ${acceptedCount === totalNotes ? 'text-green-800' : 'text-amber-800'}`}>
+              {acceptedCount === totalNotes
+                ? '✅ All AI scores validated — ready to apply calibration'
+                : `⚠️ ${totalNotes - acceptedCount} metric${totalNotes - acceptedCount > 1 ? 's' : ''} pending validation`}
+            </div>
+            <div className={`text-xs ${acceptedCount === totalNotes ? 'text-green-700' : 'text-amber-700'}`}>
+              {acceptedCount}/{totalNotes} metrics accepted · Validation confirms relevance, context, and accuracy before proceeding to VSM
+            </div>
+          </div>
+          {acceptedCount < totalNotes && (
+            <button onClick={acceptAll}
+              className="text-sm px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700">
+              Accept Remaining {totalNotes - acceptedCount}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* VSM Calibration Preview */}
       {Object.keys(cal).length > 0 && (
         <div className="card">
@@ -359,12 +529,12 @@ export default function DORAAssessmentPage() {
           <div className="card-body">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { key: 'phase3_wt',         label: 'Phase 3 — Code Review WT',         unit: 'h', source: 'Code review cycle time' },
-                { key: 'phase4_pt',          label: 'Phase 4 — CI Build PT',            unit: 'h', source: 'Build duration metric' },
+                { key: 'phase3_wt',          label: 'Phase 3 — Code Review WT',       unit: 'h', source: 'Code review cycle time' },
+                { key: 'phase4_pt',           label: 'Phase 4 — CI Build PT',          unit: 'h', source: 'Build duration metric' },
                 { key: 'phase5_rework_factor',label: 'Phase 5 — Rework Multiplier',    unit: '×', source: 'Change failure rate' },
-                { key: 'phase6_wt',          label: 'Phase 6 — Release Gate WT',        unit: 'h', source: 'Deployment frequency' },
-                { key: 'phase7_wt',          label: 'Phase 7 — Incident Response WT',   unit: 'h', source: 'MTTR' },
-                { key: 'phases3to6_lt_days', label: 'Phases 3–6 — Delivery LT',         unit: 'd', source: 'Lead time for change' },
+                { key: 'phase6_wt',           label: 'Phase 6 — Release Gate WT',      unit: 'h', source: 'Deployment frequency' },
+                { key: 'phase7_wt',           label: 'Phase 7 — Incident Response WT', unit: 'h', source: 'MTTR' },
+                { key: 'phases3to6_lt_days',  label: 'Phases 3–6 — Delivery LT',       unit: 'd', source: 'Lead time for change' },
               ].filter(c => cal[c.key] !== undefined).map(c => (
                 <div key={c.key} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">{c.label}</div>
@@ -375,25 +545,21 @@ export default function DORAAssessmentPage() {
                 </div>
               ))}
             </div>
-
-            {/* Accuracy delta explanation */}
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
               <div className="font-bold text-green-800 text-sm mb-1">
                 ✅ VSM Accuracy Improvement: +{Math.min(Object.keys(cal).length * 3 + (profile ? 5 : 0), 25)}% from DORA calibration
               </div>
               <div className="text-xs text-green-700">
                 {Object.keys(cal).length} phase metric{Object.keys(cal).length > 1 ? 's' : ''} will use your measured DORA values instead of industry-default estimates.
-                {profile === 'Elite' && ' Elite DORA profile: VSM will show minimal bottlenecks in delivery phases — planning phases are the priority.'}
-                {profile === 'High'  && ' High DORA profile: minor bottlenecks in testing and planning phases will dominate.'}
-                {profile === 'Medium'&& ' Medium DORA profile: testing signoff and release gating are likely the largest bottlenecks.'}
-                {profile === 'Low'   && ' Low DORA profile: multiple compounding bottlenecks across phases 3–6 expected.'}
+                {profile === 'Medium' && ' Medium profile: testing signoff and release gating are likely the largest bottlenecks — VSM will confirm.'}
+                {profile === 'Low'    && ' Low profile: multiple compounding bottlenecks across phases 3–6 expected.'}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* DORA 4 key bands reference */}
+      {/* DORA bands reference table */}
       <div className="card">
         <div className="card-header"><h3 className="font-bold text-gray-800">DORA Performance Bands — 2024 State of DevOps Benchmarks</h3></div>
         <div className="card-body overflow-x-auto">
@@ -410,10 +576,10 @@ export default function DORAAssessmentPage() {
             </thead>
             <tbody>
               {[
-                { profile: 'Elite',  df: 'Multiple/day', lt: '< 1 hour',  cfr: '< 5%',  mttr: '< 1 hour',  impl: 'Phases 1–2 are the bottleneck — delivery is already automated', color: 'green' },
-                { profile: 'High',   df: 'Daily–weekly', lt: '1 day–1 wk',cfr: '5–10%', mttr: '< 1 day',   impl: 'Testing and planning phases drive remaining WT', color: 'blue' },
-                { profile: 'Medium', df: 'Weekly–monthly',lt:'1–4 weeks', cfr: '10–15%',mttr: '< 1 week',  impl: 'Release gating and UAT signoff are the critical bottlenecks', color: 'amber' },
-                { profile: 'Low',    df: '< Monthly',    lt: '1–6 months',cfr: '> 15%', mttr: '> 1 week',  impl: 'CI/CD foundation and quality gates need building before AI automation', color: 'red' },
+                { profile: 'Elite',  df: 'Multiple/day',   lt: '< 1 hour',    cfr: '< 5%',   mttr: '< 1 hour',   impl: 'Phases 1–2 are the bottleneck — delivery already automated', color: 'green' },
+                { profile: 'High',   df: 'Daily–weekly',   lt: '1 day–1 wk',  cfr: '5–10%',  mttr: '< 1 day',    impl: 'Testing and planning phases drive remaining WT', color: 'blue' },
+                { profile: 'Medium', df: 'Weekly–monthly', lt: '1–4 weeks',   cfr: '10–15%', mttr: '< 1 week',   impl: 'Release gating and UAT signoff are critical bottlenecks', color: 'amber' },
+                { profile: 'Low',    df: '< Monthly',      lt: '1–6 months',  cfr: '> 15%',  mttr: '> 1 week',   impl: 'CI/CD foundation needs building before AI automation', color: 'red' },
               ].map(r => (
                 <tr key={r.profile} className={`border-b border-gray-100 ${profile === r.profile ? `bg-${r.color}-50` : ''}`}>
                   <td className="py-2.5 pr-4"><span className={`bg-${r.color}-600 text-white text-xs font-bold px-2 py-0.5 rounded-full`}>{r.profile}</span></td>
@@ -433,8 +599,14 @@ export default function DORAAssessmentPage() {
       <div className="bg-white border-2 border-cyan-200 rounded-2xl p-6 text-center">
         <div className="mb-3">
           {!profile && <p className="text-gray-600 text-sm">Fill in at least the 4 core DORA metrics to classify your profile and apply calibration to the VSM.</p>}
-          {profile && !saved && <p className="text-gray-700 text-sm">DORA profile classified as <strong className={`text-${band.color}-700`}>{profile} Performer</strong>. Click below to apply calibration to your VSM.</p>}
-          {saved && <p className="text-green-700 font-semibold text-sm">✅ DORA calibration applied — {Object.keys(cal).length} VSM phase metrics now use measured values.</p>}
+          {profile && !saved && (
+            <p className="text-gray-700 text-sm">
+              Profile: <strong className={`text-${band.color}-700`}>{profile} Performer</strong>.
+              {aiNotes && acceptedCount < totalNotes && <span className="text-amber-600"> Validate {totalNotes - acceptedCount} remaining AI suggestions before applying.</span>}
+              {(!aiNotes || acceptedCount === totalNotes) && ' Click below to apply calibration to your VSM.'}
+            </p>
+          )}
+          {saved && <p className="text-green-700 font-semibold text-sm">✅ DORA calibration applied — {Object.keys(cal).length} VSM phase metrics use measured values.</p>}
         </div>
         <div className="flex gap-3 justify-center flex-wrap">
           <button onClick={handleApply} disabled={!profile}

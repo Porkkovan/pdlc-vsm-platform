@@ -2,6 +2,7 @@ import { useApp } from '../contexts/AppContext'
 import { Link } from 'react-router-dom'
 import { PDLC_PHASES, FUTURE_STATE_SCENARIOS } from '../data/pdlcPhases'
 import { useState } from 'react'
+import { projectsApi } from '../services/api'
 
 const WORKFLOW_STEPS = [
   { step: 1, label: 'Connect ALM',         path: '/alm-connect',     icon: '🔗', desc: 'Jira, ADO, CSV' },
@@ -15,13 +16,22 @@ const WORKFLOW_STEPS = [
 ]
 
 export default function DashboardPage() {
-  const { project, setProject, analysisResult, vsmLevel, setVsmLevel } = useApp()
+  const { project, saveProject, analysisResult, vsmLevel, setVsmLevel, addNotification } = useApp()
   const [editCtx, setEditCtx] = useState(false)
   const [draft, setDraft] = useState({ ...project })
+  const [saving, setSaving] = useState(false)
 
-  const saveContext = () => {
-    setProject(p => ({ ...p, ...draft }))
-    setEditCtx(false)
+  const saveContext = async () => {
+    setSaving(true)
+    try {
+      await saveProject({ ...project, ...draft })
+      addNotification('Project saved', 'success')
+    } catch {
+      addNotification('Saved locally (backend not reachable)', 'info')
+    } finally {
+      setSaving(false)
+      setEditCtx(false)
+    }
   }
 
   const hasContext = project.organization || project.team
@@ -80,7 +90,9 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 <div className="col-span-2">
-                  <button onClick={saveContext} className="btn-primary w-full py-2 text-sm">Save Context</button>
+                  <button onClick={saveContext} disabled={saving} className="btn-primary w-full py-2 text-sm">
+                    {saving ? '⏳ Saving...' : '💾 Save & Persist'}
+                  </button>
                 </div>
               </div>
             ) : (

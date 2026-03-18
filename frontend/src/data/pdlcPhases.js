@@ -570,13 +570,13 @@ export const FUTURE_STATE_SCENARIOS = [
   {
     id: 'option-c',
     label: 'Option C',
-    title: 'AI-First — Agents Across PDLC + Two Roles',
-    subtitle: 'Maximum automation with Product Definer and Product Builder',
-    description: 'Leverage AI agents across the entire PDLC with only two human roles: Product Definer (sets vision & outcomes) and Product Builder (oversees agent orchestration).',
+    title: 'ADLC — AI-Driven Lifecycle (BMAD Approach)',
+    subtitle: 'Product Definer + Product Builder supervise full agent orchestration',
+    description: 'The AI-Driven Lifecycle (ADLC) model built on the BMAD (Build, Measure, Automate, Deploy) approach. Only two human roles: Product Definer sets vision & OKRs, Product Builder supervises the agent orchestration layer and holds the production approval gate. Near-zero wait time — agents operate 24/7 with no human queues.',
     humanRoles: ['Product Definer', 'Product Builder'],
-    aiAgents: ['AI Roadmap Assistant', 'FeatureGen Agent', 'ScenarioGen Agent', 'StoryGen Agent', 'AI Architecture Advisor', 'DesignGen Agent', 'DesignDoc Agent', 'CodeGen Agent', 'TestGen Agent', 'ReviewAgent', 'DataGen Agent', 'AI Build Optimizer', 'AI SAST Tools', 'AI Test Execution', 'AI Performance Analyzer', 'AI DAST Tools', 'IaC Agent', 'AI Deployment Agent', 'AI Release Manager', 'AI APM', 'IncidentAgent', 'FeedbackAgent'],
-    automationLevel: 85,
+    aiAgents: ['FeatureGen Agent', 'ScenarioGen Agent', 'StoryGen Agent', 'AI Architecture Advisor', 'DesignGen Agent', 'DesignDoc Agent', 'CodeGen Agent', 'TestGen Agent', 'ReviewAgent', 'AI Code Quality Tools', 'AI Build Optimizer', 'AI SAST Tools', 'AI Artifact Manager', 'AI Deployment Agent', 'AI Environment Manager', 'DataGen Agent', 'AI Test Execution', 'AI Performance Analyzer', 'AI DAST Tools', 'AI UAT Assistant', 'IaC Agent', 'AI Production Deploy', 'AI Release Manager', 'ReleaseNotes Agent', 'AI APM (Davis AI)', 'AI Log Analyzer', 'IncidentAgent', 'FeedbackAgent'],
+    automationLevel: 92,
     color: 'emerald',
-    expectedImprovements: { leadTime: 70, flowEfficiency: 350, effort: 70 }
+    expectedImprovements: { leadTime: 85, flowEfficiency: 650, effort: 92 }
   }
 ]

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../../contexts/AppContext'
 import clsx from 'clsx'
 
@@ -33,10 +33,24 @@ const GROUP_LABELS = {
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const { pathname } = useLocation()
-  const { project, notifications } = useApp()
+  const navigate = useNavigate()
+  const { project, savedProjects, switchProject, notifications } = useApp()
 
   const groups = [...new Set(NAV_ITEMS.map(n => n.group))]
+
+  const handleSwitch = async (id) => {
+    setProjectMenuOpen(false)
+    await switchProject(id)
+    navigate('/dashboard')
+  }
+
+  const handleNewProject = () => {
+    setProjectMenuOpen(false)
+    switchProject(null)
+    navigate('/dashboard')
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -64,11 +78,59 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {/* Project indicator */}
-        {sidebarOpen && project.name && (
-          <div className="px-4 py-3 bg-blue-900/40 border-b border-gray-700">
-            <div className="text-xs text-blue-300 font-semibold truncate">{project.name}</div>
-            <div className="text-xs text-gray-400 truncate">{project.team || project.organization}</div>
+        {/* Project switcher */}
+        {sidebarOpen && (
+          <div className="relative border-b border-gray-700">
+            <button
+              onClick={() => setProjectMenuOpen(o => !o)}
+              className="w-full px-4 py-3 bg-blue-900/40 hover:bg-blue-900/60 transition-colors text-left flex items-center justify-between gap-2"
+            >
+              <div className="overflow-hidden">
+                <div className="text-xs text-blue-300 font-semibold truncate">
+                  {project.name || project.organization || project.team || 'No project'}
+                </div>
+                <div className="text-xs text-gray-400 truncate">
+                  {project.team && project.organization
+                    ? `${project.team} · ${project.organization}`
+                    : project.team || project.organization || 'Set team context →'}
+                </div>
+              </div>
+              <span className="text-gray-400 text-xs shrink-0">
+                {projectMenuOpen ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {projectMenuOpen && (
+              <div className="absolute left-0 right-0 top-full bg-gray-800 border border-gray-700 rounded-b-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                {savedProjects.length > 0 && (
+                  <>
+                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-700">
+                      Saved Projects
+                    </div>
+                    {savedProjects.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleSwitch(p.id)}
+                        className={clsx(
+                          'w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 transition-colors',
+                          project.id === p.id ? 'bg-blue-700/40 text-blue-200' : 'text-gray-300'
+                        )}
+                      >
+                        <div className="font-semibold truncate">{p.name || p.organization || p.team}</div>
+                        <div className="text-xs text-gray-400 truncate">{p.team || p.organization}</div>
+                      </button>
+                    ))}
+                    <div className="border-t border-gray-700" />
+                  </>
+                )}
+                <button
+                  onClick={handleNewProject}
+                  className="w-full text-left px-4 py-2.5 text-sm text-green-300 hover:bg-gray-700 transition-colors font-semibold"
+                >
+                  + New Project
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -85,6 +147,7 @@ export default function Layout({ children }) {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => setProjectMenuOpen(false)}
                   className={clsx(
                     'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
                     pathname === item.path
@@ -117,8 +180,12 @@ export default function Layout({ children }) {
             <h1 className="font-bold text-gray-800 text-lg">
               {NAV_ITEMS.find(n => n.path === pathname)?.label || 'PDLC VSM Platform'}
             </h1>
-            {project.name && (
-              <p className="text-xs text-gray-500">{project.name} · {project.team}</p>
+            {(project.name || project.team) && (
+              <p className="text-xs text-gray-500">
+                {project.name || project.organization}
+                {project.team && ` · ${project.team}`}
+                {project.id && <span className="ml-2 text-green-600">● saved</span>}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-3">

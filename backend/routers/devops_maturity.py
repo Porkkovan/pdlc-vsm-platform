@@ -371,6 +371,12 @@ async def delete_action_item(
 
 # ─── Questions Reference ─────────────────────────────────────────────
 
+@router.get("/sources")
+async def get_sources():
+    """Get supported data source types for DevOps maturity assessment."""
+    return {"source_types": SOURCE_TYPES}
+
+
 @router.get("/questions")
 async def get_questions():
     """Get all 73 assessment questions grouped by dimension."""
