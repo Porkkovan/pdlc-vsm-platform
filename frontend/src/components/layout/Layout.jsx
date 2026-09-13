@@ -1,44 +1,88 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../../contexts/AppContext'
-import clsx from 'clsx'
+import {
+  LayoutDashboard, Link2, BarChart3, Trophy, Building2, PenSquare,
+  Map, AlertTriangle, TrendingUp, Radio, Compass, Briefcase,
+  Target, Lightbulb, Bot, BookOpen, Shield, ShieldCheck,
+  BookMarked, Settings, ChevronDown, ChevronRight, GitBranch,
+  Activity, Users, LineChart, ClipboardCheck
+} from 'lucide-react'
 
-const NAV_ITEMS = [
-  { path: '/dashboard',       label: 'Dashboard',          icon: '📊', group: 'main' },
-  { path: '/alm-connect',     label: 'ALM Connect',         icon: '🔗', group: 'setup' },
-  { path: '/dora-assessment',  label: 'DORA Assessment',         icon: '📈', group: 'setup' },
-  { path: '/devops-maturity', label: 'DevOps Maturity Assessment', icon: '🏆', group: 'setup' },
-  { path: '/vsm-editor',      label: 'VSM Editor',          icon: '✏️', group: 'setup' },
-  { path: '/current-vsm',     label: 'Current State VSM',   icon: '🗺️', group: 'analysis' },
-  { path: '/bottlenecks',     label: 'Bottleneck Analysis', icon: '⚠️', group: 'analysis' },
-  { path: '/improvements',    label: 'Improvements',        icon: '🚀', group: 'analysis' },
-  { path: '/future-state',    label: 'Future State VSM',    icon: '🔮', group: 'future' },
-  { path: '/business-case',   label: 'Business Case',       icon: '💼', group: 'future' },
-  { path: '/accuracy',         label: 'Accuracy & RAG',       icon: '🎯', group: 'insights' },
-  { path: '/recommendations',  label: 'Recommendations',     icon: '💡', group: 'insights' },
-  { path: '/agents',           label: 'AI Agents',           icon: '🤖', group: 'insights' },
-  { path: '/playbook-context', label: 'Playbook',            icon: '📋', group: 'insights' },
-  { path: '/glossary',        label: 'Glossary',            icon: '📖', group: 'reference' },
-  { path: '/settings',        label: 'Settings',            icon: '⚙️', group: 'reference' }
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/outcome-dashboard', label: 'Outcome Dashboard', icon: LineChart },
+    ]
+  },
+  {
+    label: 'Setup & Data',
+    items: [
+      { path: '/alm-connect',          label: 'ALM Connect',       icon: Link2 },
+      { path: '/dora-assessment',      label: 'DORA Assessment',   icon: BarChart3 },
+      { path: '/devops-maturity',      label: 'DevOps Maturity',   icon: Trophy },
+      { path: '/manual-assessment',    label: 'Pod Assessment',    icon: ClipboardCheck },
+      { path: '/maturity-dashboard',   label: 'Maturity Dashboard', icon: BarChart3 },
+      { path: '/legacy-modernisation', label: 'Legacy Modernisation', icon: Building2 },
+      { path: '/vsm-editor',           label: 'VSM Editor',        icon: PenSquare },
+    ]
+  },
+  {
+    label: 'Current State Analysis',
+    items: [
+      { path: '/current-vsm',             label: 'Current State VSM',      icon: Map },
+      { path: '/bottlenecks',             label: 'Bottleneck Analysis',     icon: AlertTriangle },
+      { path: '/improvements',            label: 'Improvements',            icon: TrendingUp },
+      { path: '/operations-intelligence', label: 'Operations Intelligence', icon: Radio },
+    ]
+  },
+  {
+    label: 'Future State Design',
+    items: [
+      { path: '/target-state',             label: 'Target State Studio',       icon: Target },
+      { path: '/future-state',             label: 'Future State VSM',          icon: Compass },
+      { path: '/business-case',            label: 'Business Case',             icon: Briefcase },
+      { path: '/transformation-readiness', label: 'Transformation Readiness',  icon: GitBranch },
+    ]
+  },
+  {
+    label: 'AI Insights',
+    items: [
+      { path: '/accuracy',         label: 'Accuracy & RAG',   icon: Target },
+      { path: '/recommendations',  label: 'Recommendations',  icon: Lightbulb },
+      { path: '/agents',           label: 'AI Agents',        icon: Bot },
+      { path: '/playbook-context', label: 'Playbook',         icon: BookOpen },
+      { path: '/roles-slides',     label: 'Role Responsibilities', icon: Users },
+    ]
+  },
+  {
+    label: 'Governance & Assurance',
+    items: [
+      { path: '/governance',   label: 'Governance & Guardrails', icon: Shield },
+      { path: '/ai-assurance', label: 'AI Assurance',            icon: ShieldCheck },
+    ]
+  },
+  {
+    label: 'Reference',
+    items: [
+      { path: '/glossary',  label: 'Glossary',  icon: BookMarked },
+      { path: '/settings',  label: 'Settings',  icon: Settings },
+    ]
+  },
 ]
 
-const GROUP_LABELS = {
-  main:      'Overview',
-  setup:     'Setup & Data',
-  analysis:  'Current State Analysis',
-  future:    'Future State Design',
-  insights:  'AI Insights',
-  reference: 'Reference'
-}
+const ALL_NAV = NAV_GROUPS.flatMap(g => g.items)
 
 export default function Layout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState({})
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { project, savedProjects, switchProject, notifications } = useApp()
 
-  const groups = [...new Set(NAV_ITEMS.map(n => n.group))]
+  const toggle = (label) => setCollapsed(p => ({ ...p, [label]: !p[label] }))
 
   const handleSwitch = async (id) => {
     setProjectMenuOpen(false)
@@ -52,146 +96,142 @@ export default function Layout({ children }) {
     navigate('/dashboard')
   }
 
+  const pageTitle = ALL_NAV.find(n => n.path === pathname)?.label || 'STUMP'
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className={clsx(
-        'flex flex-col bg-gray-900 text-white transition-all duration-200 shrink-0',
-        sidebarOpen ? 'w-64' : 'w-16'
-      )}>
+      <aside className="w-64 min-h-screen bg-white flex flex-col border-r border-gray-200 flex-shrink-0 shadow-sm">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-700">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm shrink-0">
-            VSM
-          </div>
-          {sidebarOpen && (
-            <div className="overflow-hidden">
-              <div className="font-bold text-sm leading-tight">PDLC VSM</div>
-              <div className="text-xs text-gray-400">AI Platform</div>
+        <div className="bg-sky-500 px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-sky-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Activity size={18} className="text-white" />
             </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="ml-auto text-gray-400 hover:text-white transition-colors"
-          >
-            {sidebarOpen ? '◀' : '▶'}
-          </button>
+            <div>
+              <div className="text-white font-bold text-sm leading-tight">STUMP</div>
+              <div className="text-blue-200 text-xs leading-tight">Transformation Tower</div>
+            </div>
+          </div>
+          <div className="text-blue-300 text-[10px] mt-2 font-medium">
+            Strategic Transformation Unified Mapping Platform
+          </div>
         </div>
 
         {/* Project switcher */}
-        {sidebarOpen && (
-          <div className="relative border-b border-gray-700">
-            <button
-              onClick={() => setProjectMenuOpen(o => !o)}
-              className="w-full px-4 py-3 bg-blue-900/40 hover:bg-blue-900/60 transition-colors text-left flex items-center justify-between gap-2"
-            >
-              <div className="overflow-hidden">
-                <div className="text-xs text-blue-300 font-semibold truncate">
-                  {project.name || project.organization || project.team || 'No project'}
-                </div>
-                <div className="text-xs text-gray-400 truncate">
-                  {project.team && project.organization
-                    ? `${project.team} · ${project.organization}`
-                    : project.team || project.organization || 'Set team context →'}
-                </div>
+        <div className="relative border-b border-gray-200">
+          <button
+            onClick={() => setProjectMenuOpen(o => !o)}
+            className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors text-left flex items-center justify-between gap-2"
+          >
+            <div className="overflow-hidden">
+              <div className="text-xs text-sky-700 font-semibold truncate">
+                {project.name || project.organization || project.team || 'No project'}
               </div>
-              <span className="text-gray-400 text-xs shrink-0">
-                {projectMenuOpen ? '▲' : '▼'}
-              </span>
-            </button>
+              <div className="text-xs text-gray-400 truncate">
+                {project.team && project.organization
+                  ? `${project.team} · ${project.organization}`
+                  : project.team || project.organization || 'Set team context →'}
+              </div>
+            </div>
+            <span className="text-gray-400 shrink-0">
+              {projectMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </span>
+          </button>
 
-            {projectMenuOpen && (
-              <div className="absolute left-0 right-0 top-full bg-gray-800 border border-gray-700 rounded-b-lg shadow-xl z-50 max-h-64 overflow-y-auto">
-                {savedProjects.length > 0 && (
-                  <>
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-700">
-                      Saved Projects
-                    </div>
-                    {savedProjects.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => handleSwitch(p.id)}
-                        className={clsx(
-                          'w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 transition-colors',
-                          project.id === p.id ? 'bg-blue-700/40 text-blue-200' : 'text-gray-300'
-                        )}
-                      >
-                        <div className="font-semibold truncate">{p.name || p.organization || p.team}</div>
-                        <div className="text-xs text-gray-400 truncate">{p.team || p.organization}</div>
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-700" />
-                  </>
-                )}
-                <button
-                  onClick={handleNewProject}
-                  className="w-full text-left px-4 py-2.5 text-sm text-green-300 hover:bg-gray-700 transition-colors font-semibold"
-                >
-                  + New Project
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+          {projectMenuOpen && (
+            <div className="absolute left-0 right-0 top-full bg-white border border-gray-200 rounded-b-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+              {savedProjects.length > 0 && (
+                <>
+                  <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100">
+                    Saved Projects
+                  </div>
+                  {savedProjects.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSwitch(p.id)}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
+                        project.id === p.id ? 'bg-blue-50 text-sky-700' : 'text-gray-600'
+                      }`}
+                    >
+                      <div className="font-semibold text-xs truncate">{p.name || p.organization || p.team}</div>
+                      <div className="text-[10px] text-gray-400 truncate">{p.team || p.organization}</div>
+                    </button>
+                  ))}
+                  <div className="border-t border-gray-100" />
+                </>
+              )}
+              <button
+                onClick={handleNewProject}
+                className="w-full text-left px-4 py-2.5 text-xs text-sky-600 hover:bg-sky-50 transition-colors font-semibold"
+              >
+                + New Project
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-2">
-          {groups.map(group => (
-            <div key={group}>
-              {sidebarOpen && (
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
-                  {GROUP_LABELS[group]}
+        <nav className="flex-1 py-3 overflow-y-auto bg-white">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label} className="mb-1">
+              <button
+                onClick={() => toggle(group.label)}
+                className="w-full flex items-center justify-between px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {group.label}
+                {collapsed[group.label] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+              </button>
+              {!collapsed[group.label] && (
+                <div>
+                  {group.items.map(item => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setProjectMenuOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2 mx-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                        pathname === item.path
+                          ? 'bg-sky-500 text-white font-semibold'
+                          : 'text-gray-600 hover:text-sky-700 hover:bg-blue-50'
+                      }`}
+                      title={item.label}
+                    >
+                      <item.icon size={15} className="shrink-0" />
+                      <span className="leading-tight truncate">{item.label}</span>
+                    </Link>
+                  ))}
                 </div>
               )}
-              {NAV_ITEMS.filter(n => n.group === group).map(item => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setProjectMenuOpen(false)}
-                  className={clsx(
-                    'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                    pathname === item.path
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  )}
-                  title={!sidebarOpen ? item.label : undefined}
-                >
-                  <span className="text-base shrink-0">{item.icon}</span>
-                  {sidebarOpen && <span className="truncate">{item.label}</span>}
-                </Link>
-              ))}
             </div>
           ))}
         </nav>
 
         {/* Footer */}
-        {sidebarOpen && (
-          <div className="px-4 py-3 border-t border-gray-700 text-xs text-gray-500">
-            PDLC VSM Platform v1.0 · 7 phases · 36 activities
-          </div>
-        )}
+        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+          <div className="text-[10px] text-gray-400">© 2026 Cognizant. Confidential.</div>
+          <div className="text-[10px] text-gray-400">STUMP v1.0 · 7 phases · 36 activities</div>
+        </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Topbar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        {/* Topbar — navy style */}
+        <header className="bg-sky-500 shadow-md px-6 py-3 flex items-center justify-between flex-shrink-0">
           <div>
-            <h1 className="font-bold text-gray-800 text-lg">
-              {NAV_ITEMS.find(n => n.path === pathname)?.label || 'PDLC VSM Platform'}
-            </h1>
-            {(project.name || project.team) && (
-              <p className="text-xs text-gray-500">
-                {project.name || project.organization}
-                {project.team && ` · ${project.team}`}
-                {project.id && <span className="ml-2 text-green-600">● saved</span>}
-              </p>
-            )}
+            <h1 className="text-white font-bold text-base">{pageTitle}</h1>
+            <p className="text-blue-200 text-xs">
+              Strategic Transformation Unified Mapping Platform
+              {(project.name || project.team) && (
+                <> · {project.name || project.organization}{project.team && ` · ${project.team}`}</>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
-              7 Phases · 36 Activities
+            <div className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 rounded-full px-3 py-1">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-emerald-300 text-xs font-semibold">LIVE</span>
             </div>
+            <div className="text-blue-300 text-xs font-medium">7 Phases · 36 Activities</div>
           </div>
         </header>
 
@@ -199,12 +239,11 @@ export default function Layout({ children }) {
         {notifications.length > 0 && (
           <div className="fixed top-4 right-4 z-50 space-y-2">
             {notifications.map(n => (
-              <div key={n.id} className={clsx(
-                'px-4 py-3 rounded-lg shadow-lg text-sm font-medium',
-                n.type === 'error'   ? 'bg-red-600 text-white'   :
-                n.type === 'success' ? 'bg-green-600 text-white' :
-                'bg-blue-600 text-white'
-              )}>
+              <div key={n.id} className={`px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+                n.type === 'error'   ? 'bg-sky-600 text-white'     :
+                n.type === 'success' ? 'bg-emerald-600 text-white' :
+                'bg-sky-500 text-white'
+              }`}>
                 {n.msg}
               </div>
             ))}

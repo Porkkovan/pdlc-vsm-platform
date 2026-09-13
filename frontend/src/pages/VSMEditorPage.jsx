@@ -58,7 +58,7 @@ export default function VSMEditorPage() {
 
   return (
     <div className="space-y-6 fade-in">
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-indigo-400 to-sky-400 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-1">VSM Editor</h2>
@@ -117,7 +117,7 @@ export default function VSMEditorPage() {
                           className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                       </td>
-                      <td className="px-4 py-3 text-red-600 font-semibold text-xs">{row.liveWait}</td>
+                      <td className="px-4 py-3 text-sky-600 font-semibold text-xs">{row.liveWait}</td>
                       <td className="px-4 py-3">
                         <input type="text" value={row.overrideWait}
                           onChange={e => updateRow(row.actId, 'overrideWait', e.target.value)}

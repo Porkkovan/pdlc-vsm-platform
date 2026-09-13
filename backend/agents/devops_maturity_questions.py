@@ -1,16 +1,16 @@
 """
 DevOps Maturity Assessment Questions
 73 questions across 4 dimensions: Cultural, Measurement, Process, Technical
-Scoring: PRE-CRAWL (1-2), CRAWL (3-4), WALK (5-6), RUN (7-8), FLY (9-10)
-Aligned to Humana/HPE DevOps Maturity Framework
+Scoring: L1 Foundation (1-2), L2 Augmentation (3-4), L3 Automation (5-6), L4 Transformation (7-8), L5 Reinvention (9-10)
+Aligned to ADLC L1-L5 Maturity Ladder
 """
 
 MATURITY_BANDS = {
-    "PRE_CRAWL": {"range": "1-2", "label": "Pre-Crawl", "color": "#ef4444"},
-    "CRAWL":     {"range": "3-4", "label": "Crawl",     "color": "#f97316"},
-    "WALK":      {"range": "5-6", "label": "Walk",      "color": "#eab308"},
-    "RUN":       {"range": "7-8", "label": "Run",       "color": "#22c55e"},
-    "FLY":       {"range": "9-10","label": "Fly",       "color": "#3b82f6"},
+    "PRE_CRAWL": {"range": "1-2", "label": "L1 — Foundation",     "color": "#ef4444"},
+    "CRAWL":     {"range": "3-4", "label": "L2 — Augmentation",   "color": "#f97316"},
+    "WALK":      {"range": "5-6", "label": "L3 — Automation",     "color": "#eab308"},
+    "RUN":       {"range": "7-8", "label": "L4 — Transformation", "color": "#22c55e"},
+    "FLY":       {"range": "9-10","label": "L5 — Reinvention",    "color": "#3b82f6"},
 }
 
 # Data source types for auto-scoring

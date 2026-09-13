@@ -1,33 +1,43 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { PDLC_PHASES } from '../data/pdlcPhases'
-import { projectsApi } from '../services/api'
+import { projectsApi, vsmApi, agentsApi } from '../services/api'
 
 const AppContext = createContext(null)
+
+const LS_KEY = 'pdlc_active_project_id'   // session hint only — no project data stored locally
 
 const DEFAULT_PROJECT = {
   id: null,
   name: '',
   organization: '',
+  industry: '',
+  portfolios: [],
+  productGroups: [],
   portfolio: '',
   productGroup: '',
+  product: '',
   team: '',
   almTool: null,
   almConfig: {},
-  createdAt: null
+  createdAt: null,
 }
 
-// Map backend snake_case fields → frontend camelCase
+// All fields now come fully from Postgres — no localOverride merge needed
 function mapProjectFromApi(p) {
   return {
-    id:           p.id,
-    name:         p.name || '',
-    organization: p.organization || '',
-    portfolio:    p.portfolio || '',
-    productGroup: p.product_group || '',
-    team:         p.team || '',
-    almTool:      p.alm_tool || null,
-    almConfig:    p.alm_config || {},
-    createdAt:    p.created_at || null
+    id:            p.id,
+    name:          p.name          || '',
+    organization:  p.organization  || '',
+    industry:      p.industry      || '',
+    portfolios:    p.portfolios    || [],
+    productGroups: p.product_groups || [],
+    portfolio:     p.portfolio     || '',
+    productGroup:  p.product_group || '',
+    product:       p.product       || '',
+    team:          p.team          || '',
+    almTool:       p.alm_tool      || null,
+    almConfig:     p.alm_config    || {},
+    createdAt:     p.created_at    || null,
   }
 }
 
@@ -44,32 +54,42 @@ export function AppProvider({ children }) {
   const [doraMetrics, setDoraMetrics]       = useState(null)
   const [doraProfile, setDoraProfile]       = useState(null)
 
-  // ── Load projects list from backend on mount ──────────────────────────────
+  // ── Auto-load VSM snapshot + analysis result for a project ID ─────────────
+  const loadProjectData = useCallback(async (projectId) => {
+    if (!projectId) return
+    try {
+      const vsm = await vsmApi.get(projectId)
+      setVsmData(vsm?.vsm_data || null)
+    } catch {}
+    try {
+      const result = await agentsApi.getAnalysisResult(projectId)
+      setAnalysisResult(result)
+    } catch {}
+  }, [])
+
+  // ── Restore last session from Postgres on mount ───────────────────────────
   useEffect(() => {
     projectsApi.list().then(list => {
       setSavedProjects(list)
-      // Restore last-used project from localStorage
-      const lastId = localStorage.getItem('pdlc_active_project_id')
+      const lastId = localStorage.getItem(LS_KEY)
       if (lastId) {
         const found = list.find(p => p.id === lastId)
-        if (found) setProject(mapProjectFromApi(found))
+        if (found) {
+          setProject(mapProjectFromApi(found))
+          loadProjectData(found.id)
+        }
       }
     }).catch(() => {
-      // Backend not available — try localStorage fallback
-      const saved = localStorage.getItem('pdlc_project')
-      if (saved) {
-        try { setProject(JSON.parse(saved)) } catch { /* ignore */ }
-      }
+      // Backend unreachable — start with empty project
     })
-  }, [])
+  }, [loadProjectData])
 
-  // ── Persist active project ID to localStorage whenever it changes ─────────
+  // ── Persist active project ID (session hint only) ─────────────────────────
   useEffect(() => {
     if (project.id) {
-      localStorage.setItem('pdlc_active_project_id', project.id)
-      localStorage.setItem('pdlc_project', JSON.stringify(project))
+      localStorage.setItem(LS_KEY, project.id)
     }
-  }, [project])
+  }, [project.id])
 
   const addNotification = useCallback((msg, type = 'info') => {
     const id = Date.now()
@@ -81,44 +101,42 @@ export function AppProvider({ children }) {
     setAgentStatus(prev => ({ ...prev, [agentId]: { status, result, updatedAt: Date.now() } }))
   }, [])
 
-  // ── Save or update project in backend ────────────────────────────────────
+  // ── Save or update project — all fields persisted to Postgres ────────────
   const saveProject = useCallback(async (data) => {
     const payload = {
-      name:          data.name || data.organization || data.team || 'My Project',
-      organization:  data.organization || null,
-      portfolio:     data.portfolio || null,
-      product_group: data.productGroup || null,
-      team:          data.team || null,
-      industry:      data.industry || null
+      name:           data.name || data.organization || data.team || 'My Project',
+      organization:   data.organization   || null,
+      portfolio:      data.portfolio      || null,
+      product_group:  data.productGroup   || null,
+      product:        data.product        || null,
+      team:           data.team           || null,
+      industry:       data.industry       || null,
+      portfolios:     data.portfolios     || [],
+      product_groups: data.productGroups  || [],
+      alm_tool:       data.almTool        || null,
+      alm_config:     data.almConfig      || {},
     }
     try {
-      let saved
-      if (data.id) {
-        saved = await projectsApi.update(data.id, payload)
-      } else {
-        saved = await projectsApi.create(payload)
-      }
+      const saved = data.id
+        ? await projectsApi.update(data.id, payload)
+        : await projectsApi.create(payload)
       const mapped = mapProjectFromApi(saved)
       setProject(mapped)
       setSavedProjects(prev => {
         const idx = prev.findIndex(p => p.id === saved.id)
-        if (idx >= 0) {
-          const updated = [...prev]
-          updated[idx] = saved
-          return updated
-        }
+        if (idx >= 0) { const u = [...prev]; u[idx] = saved; return u }
         return [saved, ...prev]
       })
       return mapped
     } catch {
-      // Offline — update local state only
+      // Offline fallback — keep in-memory state, no persistence
       const withId = data.id ? data : { ...data, id: `local-${Date.now()}` }
       setProject(withId)
       return withId
     }
   }, [])
 
-  // ── Switch active project (load from backend by id) ───────────────────────
+  // ── Switch active project ────────────────────────────────────────────────
   const switchProject = useCallback(async (projectId) => {
     if (!projectId) {
       setProject(DEFAULT_PROJECT)
@@ -126,7 +144,7 @@ export function AppProvider({ children }) {
       setAnalysisResult(null)
       setAgentStatus({})
       setCustomOverrides({})
-      localStorage.removeItem('pdlc_active_project_id')
+      localStorage.removeItem(LS_KEY)
       return
     }
     try {
@@ -136,13 +154,17 @@ export function AppProvider({ children }) {
       setAnalysisResult(null)
       setAgentStatus({})
       setCustomOverrides({})
+      loadProjectData(projectId)
     } catch {
       const found = savedProjects.find(p => p.id === projectId)
-      if (found) setProject(mapProjectFromApi(found))
+      if (found) {
+        setProject(mapProjectFromApi(found))
+        loadProjectData(projectId)
+      }
     }
-  }, [savedProjects])
+  }, [savedProjects, loadProjectData])
 
-  // ── Reload saved projects list ────────────────────────────────────────────
+  // ── Reload project list ───────────────────────────────────────────────────
   const refreshProjects = useCallback(async () => {
     try {
       const list = await projectsApi.list()
@@ -157,8 +179,7 @@ export function AppProvider({ children }) {
     setAnalysisResult(null)
     setAgentStatus({})
     setCustomOverrides({})
-    localStorage.removeItem('pdlc_active_project_id')
-    localStorage.removeItem('pdlc_project')
+    localStorage.removeItem(LS_KEY)
   }, [])
 
   return (
@@ -178,7 +199,7 @@ export function AppProvider({ children }) {
       vsmLevel, setVsmLevel,
       doraMetrics, setDoraMetrics,
       doraProfile, setDoraProfile,
-      pdlcPhases: PDLC_PHASES
+      pdlcPhases: PDLC_PHASES,
     }}>
       {children}
     </AppContext.Provider>

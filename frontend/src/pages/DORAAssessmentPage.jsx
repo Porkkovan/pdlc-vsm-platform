@@ -7,8 +7,8 @@ import { US_BANK_DEMO } from '../data/demoData'
 const DORA_BANDS = {
   Elite:  { color: 'green',  bg: 'bg-green-50',  border: 'border-green-400', badge: 'bg-green-600',  label: 'Elite Performer' },
   High:   { color: 'blue',   bg: 'bg-blue-50',   border: 'border-blue-400',  badge: 'bg-blue-600',   label: 'High Performer' },
-  Medium: { color: 'amber',  bg: 'bg-amber-50',  border: 'border-amber-400', badge: 'bg-amber-500',  label: 'Medium Performer' },
-  Low:    { color: 'red',    bg: 'bg-red-50',    border: 'border-red-400',   badge: 'bg-red-600',    label: 'Low Performer' },
+  Medium: { color: 'emerald',  bg: 'bg-cyan-50',  border: 'border-cyan-400', badge: 'bg-cyan-500',  label: 'Medium Performer' },
+  Low:    { color: 'sky',    bg: 'bg-sky-50',    border: 'border-sky-400',   badge: 'bg-sky-600',    label: 'Low Performer' },
 }
 
 const DEPLOY_FREQ_SCORES = {
@@ -69,8 +69,8 @@ const PROFILE_RECS = {
 
 const PHASE_NAMES = { 1: 'Backlog & Roadmap', 2: 'Architecture & UX', 3: 'Code Management', 4: 'Continuous Integration', 5: 'Continuous Testing', 6: 'Continuous Delivery', 7: 'Monitoring & Feedback' }
 
-const CONFIDENCE_COLOR = (c) => c >= 90 ? 'text-green-600' : c >= 75 ? 'text-blue-600' : 'text-amber-600'
-const CONFIDENCE_BG    = (c) => c >= 90 ? 'bg-green-50 border-green-200' : c >= 75 ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'
+const CONFIDENCE_COLOR = (c) => c >= 90 ? 'text-green-600' : c >= 75 ? 'text-blue-600' : 'text-cyan-600'
+const CONFIDENCE_BG    = (c) => c >= 90 ? 'bg-green-50 border-green-200' : c >= 75 ? 'bg-blue-50 border-blue-200' : 'bg-cyan-50 border-cyan-200'
 
 // Map metric key → notes key
 const METRIC_NOTES_MAP = {
@@ -120,7 +120,7 @@ function SourceNote({ metricKey, notes, accepted, onAccept, onOverride }) {
 
       {/* Root cause / gap */}
       <div className="mb-2">
-        <div className="text-xs font-semibold text-red-600 mb-0.5">⚠ Root Cause / Gap:</div>
+        <div className="text-xs font-semibold text-sky-600 mb-0.5">⚠ Root Cause / Gap:</div>
         <p className="text-xs text-gray-700 leading-relaxed">{n.rootCause}</p>
       </div>
 
@@ -150,10 +150,139 @@ function SourceNote({ metricKey, notes, accepted, onAccept, onOverride }) {
   )
 }
 
+// ─── Team Context Selector ────────────────────────────────────────────────────
+function TeamContextSelector({ project, onApply }) {
+  const portfolios    = project.portfolios    || []
+  const productGroups = project.productGroups || []
+  const hasStructure  = portfolios.length > 0 || productGroups.length > 0
+
+  const [selPortfolio, setSelPortfolio] = useState(project.portfolio    || '')
+  const [selGroup,     setSelGroup]     = useState(project.productGroup || '')
+  const [selProduct,   setSelProduct]   = useState(project.product      || '')
+  const [selTeam,      setSelTeam]      = useState(project.team         || '')
+
+  const groupObj          = productGroups.find(g => g.name === selGroup)
+  const availableProducts = groupObj?.products || []
+  const productObj        = availableProducts.find(p => p.name === selProduct)
+  const availableTeams    = productObj?.teams || []
+
+  const handleGroupChange   = (g) => { setSelGroup(g); setSelProduct(''); setSelTeam('') }
+  const handleProductChange = (p) => { setSelProduct(p); setSelTeam('') }
+
+  const handleApply = () => {
+    if (!selGroup || !selProduct || !selTeam) return
+    onApply(selPortfolio, selGroup, selProduct, selTeam)
+  }
+
+  const isCurrentSelection =
+    project.productGroup === selGroup &&
+    project.product      === selProduct &&
+    project.team         === selTeam && !!selTeam
+
+  const colCount = portfolios.length > 0 ? 4 : 3
+
+  return (
+    <div className="card">
+      <div className="card-header bg-gradient-to-r from-violet-400 to-violet-500 text-white rounded-t-xl">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-lg">Select Team Context</h3>
+            <p className="text-violet-100 text-sm">
+              Choose the product group, product, and team to assess. All subsequent modules
+              (VSM, Bottlenecks, Future State, etc.) run for this context. Return here to switch teams.
+            </p>
+          </div>
+          {project.team && (
+            <div className="shrink-0 bg-white/20 rounded-xl px-4 py-2 text-sm text-white font-semibold text-right">
+              <div className="text-xs text-violet-200 mb-0.5">Currently assessing</div>
+              <div>👥 {project.team}</div>
+              {project.product      && <div className="text-xs text-violet-200">🗂 {project.product}</div>}
+              {project.productGroup && <div className="text-xs text-violet-200">📦 {project.productGroup}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="card-body">
+        {!hasStructure && (
+          <div className="mb-4 flex items-start gap-3 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+            <span className="text-cyan-500 text-lg shrink-0">⚠</span>
+            <div className="text-xs text-cyan-800">
+              <span className="font-semibold">No org structure set up yet.</span>{' '}
+              The dropdowns below are empty.{' '}
+              <a href="/alm-connect" className="font-semibold underline hover:text-cyan-900">
+                Go to ALM Connect → Organisation Setup
+              </a>{' '}
+              to add your Product Groups, Products, and Teams — then return here to select from dropdowns.
+            </div>
+          </div>
+        )}
+
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}
+        >
+          {portfolios.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Portfolio / Segment</label>
+              <select value={selPortfolio} onChange={e => setSelPortfolio(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                <option value="">All Portfolios</option>
+                {portfolios.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Product Group *</label>
+            <select value={selGroup} onChange={e => handleGroupChange(e.target.value)}
+              disabled={!hasStructure}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-gray-100 disabled:text-gray-400">
+              <option value="">{hasStructure ? 'Select group...' : 'Set up org structure first'}</option>
+              {productGroups.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Product *</label>
+            <select value={selProduct} onChange={e => handleProductChange(e.target.value)}
+              disabled={!selGroup}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-gray-100 disabled:text-gray-400">
+              <option value="">{selGroup ? 'Select product...' : 'Select group first'}</option>
+              {availableProducts.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Product Team *</label>
+            <select value={selTeam} onChange={e => setSelTeam(e.target.value)}
+              disabled={!selProduct}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-gray-100 disabled:text-gray-400">
+              <option value="">{selProduct ? 'Select team...' : 'Select product first'}</option>
+              {availableTeams.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <button onClick={handleApply}
+            disabled={!selGroup || !selProduct || !selTeam || !!isCurrentSelection}
+            className="px-5 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50">
+            {isCurrentSelection ? '✓ Context Applied' : 'Apply Team Context →'}
+          </button>
+          {hasStructure && (!selGroup || !selProduct || !selTeam) && (
+            <p className="text-xs text-gray-500">Select Product Group → Product → Team to apply.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function DORAAssessmentPage() {
   const { doraMetrics, setDoraMetrics, doraProfile, setDoraProfile, addNotification, project,
-          saveProject, setVsmLevel } = useApp()
+          saveProject, setProject, setVsmLevel } = useApp()
 
   const [m, setM] = useState(doraMetrics || {
     deployFreq: '', leadTimeChange: '', changeFailRate: '', mttr: '',
@@ -219,8 +348,21 @@ export default function DORAAssessmentPage() {
   const acceptedCount = Object.values(accepted).filter(Boolean).length
   const totalNotes = Object.keys(aiNotes || {}).length
 
+  const handleTeamApply = async (portfolio, productGroup, product, team) => {
+    const updated = { ...project, portfolio, productGroup, product, team }
+    try {
+      await saveProject(updated)
+    } catch {
+      setProject(prev => ({ ...prev, portfolio, productGroup, product, team }))
+    }
+    addNotification(`Team context set: ${productGroup} → ${product} → ${team}`, 'success')
+  }
+
   return (
     <div className="space-y-6 fade-in">
+
+      {/* Team context selector (only shown when org structure is defined) */}
+      <TeamContextSelector project={project} onApply={handleTeamApply} />
 
       {/* Header */}
       <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -231,6 +373,14 @@ export default function DORAAssessmentPage() {
               Baseline your DevOps performance before creating the current state VSM.
               AI auto-scores each metric from uploaded data sources — review root causes, validate sources, then apply calibration.
             </p>
+            {project.team && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                {project.organization && <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">🏢 {project.organization}</span>}
+                {project.productGroup && <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">📦 {project.productGroup}</span>}
+                {project.product      && <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">🗂 {project.product}</span>}
+                <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">👥 {project.team}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {saved && profile && (
@@ -338,8 +488,8 @@ export default function DORAAssessmentPage() {
             <div className="mt-1 text-xs text-gray-400 grid grid-cols-4 gap-1">
               <span className="text-green-600">Elite: Multiple/day</span>
               <span className="text-blue-600">High: Daily</span>
-              <span className="text-amber-600">Med: Weekly</span>
-              <span className="text-red-600">Low: Monthly+</span>
+              <span className="text-cyan-600">Med: Weekly</span>
+              <span className="text-sky-600">Low: Monthly+</span>
             </div>
             {aiNotes && showNotes && (
               <SourceNote metricKey="deployFreq" notes={aiNotes} accepted={accepted.deployFreq}
@@ -361,8 +511,8 @@ export default function DORAAssessmentPage() {
             <div className="mt-1 text-xs text-gray-400 grid grid-cols-4 gap-1">
               <span className="text-green-600">Elite: &lt;1h</span>
               <span className="text-blue-600">High: &lt;1 day</span>
-              <span className="text-amber-600">Med: &lt;1 week</span>
-              <span className="text-red-600">Low: 1 month+</span>
+              <span className="text-cyan-600">Med: &lt;1 week</span>
+              <span className="text-sky-600">Low: 1 month+</span>
             </div>
             {aiNotes && showNotes && (
               <SourceNote metricKey="leadTimeChange" notes={aiNotes} accepted={accepted.leadTimeChange}
@@ -386,8 +536,8 @@ export default function DORAAssessmentPage() {
             <div className="mt-1 text-xs text-gray-400 grid grid-cols-4 gap-1">
               <span className="text-green-600">Elite: &lt;5%</span>
               <span className="text-blue-600">High: 5–10%</span>
-              <span className="text-amber-600">Med: 10–15%</span>
-              <span className="text-red-600">Low: &gt;15%</span>
+              <span className="text-cyan-600">Med: 10–15%</span>
+              <span className="text-sky-600">Low: &gt;15%</span>
             </div>
             {aiNotes && showNotes && (
               <SourceNote metricKey="changeFailRate" notes={aiNotes} accepted={accepted.changeFailRate}
@@ -409,8 +559,8 @@ export default function DORAAssessmentPage() {
             <div className="mt-1 text-xs text-gray-400 grid grid-cols-4 gap-1">
               <span className="text-green-600">Elite: &lt;1h</span>
               <span className="text-blue-600">High: &lt;1 day</span>
-              <span className="text-amber-600">Med: &lt;1 week</span>
-              <span className="text-red-600">Low: &gt;1 week</span>
+              <span className="text-cyan-600">Med: &lt;1 week</span>
+              <span className="text-sky-600">Low: &gt;1 week</span>
             </div>
             {aiNotes && showNotes && (
               <SourceNote metricKey="mttr" notes={aiNotes} accepted={accepted.mttr}
@@ -498,21 +648,21 @@ export default function DORAAssessmentPage() {
         <div className={`rounded-xl border px-4 py-3 flex items-center justify-between flex-wrap gap-3 ${
           acceptedCount === totalNotes
             ? 'bg-green-50 border-green-300'
-            : 'bg-amber-50 border-amber-300'
+            : 'bg-cyan-50 border-cyan-300'
         }`}>
           <div>
-            <div className={`font-bold text-sm ${acceptedCount === totalNotes ? 'text-green-800' : 'text-amber-800'}`}>
+            <div className={`font-bold text-sm ${acceptedCount === totalNotes ? 'text-green-800' : 'text-cyan-800'}`}>
               {acceptedCount === totalNotes
                 ? '✅ All AI scores validated — ready to apply calibration'
                 : `⚠️ ${totalNotes - acceptedCount} metric${totalNotes - acceptedCount > 1 ? 's' : ''} pending validation`}
             </div>
-            <div className={`text-xs ${acceptedCount === totalNotes ? 'text-green-700' : 'text-amber-700'}`}>
+            <div className={`text-xs ${acceptedCount === totalNotes ? 'text-green-700' : 'text-cyan-700'}`}>
               {acceptedCount}/{totalNotes} metrics accepted · Validation confirms relevance, context, and accuracy before proceeding to VSM
             </div>
           </div>
           {acceptedCount < totalNotes && (
             <button onClick={acceptAll}
-              className="text-sm px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700">
+              className="text-sm px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-cyan-700">
               Accept Remaining {totalNotes - acceptedCount}
             </button>
           )}
@@ -578,8 +728,8 @@ export default function DORAAssessmentPage() {
               {[
                 { profile: 'Elite',  df: 'Multiple/day',   lt: '< 1 hour',    cfr: '< 5%',   mttr: '< 1 hour',   impl: 'Phases 1–2 are the bottleneck — delivery already automated', color: 'green' },
                 { profile: 'High',   df: 'Daily–weekly',   lt: '1 day–1 wk',  cfr: '5–10%',  mttr: '< 1 day',    impl: 'Testing and planning phases drive remaining WT', color: 'blue' },
-                { profile: 'Medium', df: 'Weekly–monthly', lt: '1–4 weeks',   cfr: '10–15%', mttr: '< 1 week',   impl: 'Release gating and UAT signoff are critical bottlenecks', color: 'amber' },
-                { profile: 'Low',    df: '< Monthly',      lt: '1–6 months',  cfr: '> 15%',  mttr: '> 1 week',   impl: 'CI/CD foundation needs building before AI automation', color: 'red' },
+                { profile: 'Medium', df: 'Weekly–monthly', lt: '1–4 weeks',   cfr: '10–15%', mttr: '< 1 week',   impl: 'Release gating and UAT signoff are critical bottlenecks', color: 'emerald' },
+                { profile: 'Low',    df: '< Monthly',      lt: '1–6 months',  cfr: '> 15%',  mttr: '> 1 week',   impl: 'CI/CD foundation needs building before AI automation', color: 'sky' },
               ].map(r => (
                 <tr key={r.profile} className={`border-b border-gray-100 ${profile === r.profile ? `bg-${r.color}-50` : ''}`}>
                   <td className="py-2.5 pr-4"><span className={`bg-${r.color}-600 text-white text-xs font-bold px-2 py-0.5 rounded-full`}>{r.profile}</span></td>
@@ -602,7 +752,7 @@ export default function DORAAssessmentPage() {
           {profile && !saved && (
             <p className="text-gray-700 text-sm">
               Profile: <strong className={`text-${band.color}-700`}>{profile} Performer</strong>.
-              {aiNotes && acceptedCount < totalNotes && <span className="text-amber-600"> Validate {totalNotes - acceptedCount} remaining AI suggestions before applying.</span>}
+              {aiNotes && acceptedCount < totalNotes && <span className="text-cyan-600"> Validate {totalNotes - acceptedCount} remaining AI suggestions before applying.</span>}
               {(!aiNotes || acceptedCount === totalNotes) && ' Click below to apply calibration to your VSM.'}
             </p>
           )}

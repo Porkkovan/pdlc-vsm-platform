@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STUMP Platform — Interactive Workflow</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:#f4f6f9;color:#1e293b;font-family:-apple-system,'Segoe UI',system-ui,sans-serif}
+.wrap{display:flex;height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:236px;flex-shrink:0;background:#ffffff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(0,0,0,.06)}
+.sb-hdr{padding:12px 15px 10px;border-bottom:1px solid #e2e8f0}
+.sb-logo{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.sb-logo-sq{width:30px;height:30px;background:#D8273F;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 3px 10px rgba(216,39,63,.35)}
+.sb-logo-name{font-size:12px;font-weight:800;letter-spacing:.04em;color:#1e293b}
+.sb-logo-sub{font-size:8px;color:#94a3b8;margin-top:1px}
+.sb-meta-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8}
+.sb-phase-name{font-size:13px;font-weight:600;margin:2px 0 8px;color:#1e293b}
+.sb-prog-hdr{display:flex;justify-content:space-between;font-size:8px;color:#94a3b8;margin-bottom:4px}
+.sb-prog-bar{height:3px;background:#e2e8f0;border-radius:2px}
+.sb-prog-fill{height:100%;border-radius:2px;transition:width .4s,background .4s}
+.sb-body{flex:1;overflow-y:auto;padding:0}
+
+.sb-arch-item{padding:7px 15px 6px;cursor:pointer;border-left:2px solid transparent;background:#ffffff;transition:all .2s;border-bottom:1px solid #e2e8f0}
+.sb-arch-item:hover{background:#eff6ff}
+.sb-arch-item.active{background:#dbeafe}
+.sb-arch-row{display:flex;align-items:center;gap:8px}
+.sb-arch-ico{font-size:13px;line-height:1}
+.sb-arch-info{flex:1;min-width:0}
+.sb-arch-name{font-size:11px;font-weight:600;color:#475569}
+.sb-arch-item.active .sb-arch-name{color:#1e293b}
+.sb-arch-sub{font-size:8px;margin-top:1px}
+.sb-arch-badge{font-size:7px;padding:1px 6px;border-radius:4px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.25);color:#93c5fd;font-weight:700;letter-spacing:.05em;margin-left:auto;flex-shrink:0}
+.sb-arch-subnodes{padding:3px 0 3px 35px;display:none}
+.sb-arch-item.active .sb-arch-subnodes{display:block}
+
+.sb-section-lbl{font-size:7.5px;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;padding:7px 15px 3px;font-weight:700}
+
+.sb-step{padding:5px 15px;cursor:pointer;border-left:2px solid transparent;transition:all .2s}
+.sb-step:hover{background:#eff6ff}
+.sb-step.active{background:#dbeafe}
+.sb-step-row{display:flex;align-items:center;gap:8px}
+.sb-step-num{font-size:9px;font-weight:700;min-width:16px;color:#94a3b8}
+.sb-step-ico{font-size:12px;line-height:1}
+.sb-step-info{flex:1;min-width:0}
+.sb-step-name{font-size:11px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-step.active .sb-step-name{color:#1e293b}
+.sb-step-phase{font-size:7.5px;margin-top:1px}
+.sb-subnodes{padding:3px 0 2px 35px;display:none}
+.sb-step.active .sb-subnodes{display:block}
+.sb-subnode{font-size:9px;color:#64748b;padding:1.5px 0;display:flex;align-items:center;gap:5px}
+.sb-subnode-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+.sb-ctrl{padding:9px 13px;border-top:1px solid #e2e8f0;display:flex;gap:5px}
+.ctrl-btn{flex:1;padding:6px 3px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;color:#64748b;font-size:11px;cursor:pointer;text-align:center;transition:all .15s;user-select:none}
+.ctrl-btn:hover{background:#eff6ff;color:#1e293b}
+.ctrl-btn.play.on{background:rgba(29,158,117,.1);border-color:rgba(29,158,117,.3);color:#059669}
+
+/* ── MAIN ── */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.pip-bar{padding:8px 16px 6px;border-bottom:1px solid #e2e8f0;background:#ffffff;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pip-steps{display:flex;align-items:center}
+.pip-line{flex:1;height:1px;background:#e2e8f0;transition:background .3s}
+.pip-line.past{background:#94a3b8}
+.pip-sep-v{width:1px;height:22px;background:#e2e8f0;flex-shrink:0;margin:0 8px;align-self:center}
+.pip-node-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all .2s;padding:0 2px}
+.pip-circle{width:24px;height:24px;border-radius:50%;border:1.5px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#94a3b8;background:#ffffff;transition:all .25s}
+.pip-node-wrap.active .pip-circle{color:#fff;border-color:var(--pc);background:var(--pc);box-shadow:0 0 10px var(--pc-glow)}
+.pip-node-wrap:not(.active):hover .pip-circle{border-color:#94a3b8;color:#475569}
+.pip-lbl{font-size:6.5px;color:#94a3b8;margin-top:2px;text-align:center;max-width:52px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pip-node-wrap.active .pip-lbl{color:#475569}
+.pip-arch .pip-circle{border-radius:6px}
+
+.canvas-area{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+
+#tooltip{position:absolute;background:#ffffff;border:1px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:11px;pointer-events:none;opacity:0;transition:opacity .12s;max-width:220px;z-index:20;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+#tt-cat{font-size:8px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;font-weight:700}
+#tt-name{font-weight:700;font-size:12px;color:#1e293b;margin-bottom:3px}
+#tt-desc{color:#475569;font-size:10px;line-height:1.45}
+#tt-hint{font-size:9px;margin-top:5px;padding-top:5px;border-top:1px solid #e2e8f0;color:#64748b}
+
+#step-info{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#ffffff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 16px;max-width:430px;width:max-content;box-shadow:0 4px 16px rgba(0,0,0,.10);text-align:center}
+.si-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.si-name{font-size:13px;font-weight:800;color:#1e293b;margin-bottom:3px}
+.si-tag{font-size:9.5px;color:#475569;line-height:1.45}
+.si-nodes{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;justify-content:center}
+.si-node-pill{font-size:7.5px;padding:2px 6px;border-radius:999px;border:1px solid;white-space:nowrap}
+
+#legend{position:absolute;bottom:10px;left:12px;display:flex;gap:10px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#64748b}
+.leg-line{width:14px;height:1px;background:#94a3b8}
+.leg-dot{width:6px;height:6px;border-radius:50%;background:#D8273F}
+#kbd-hint{position:absolute;top:9px;right:11px;font-size:9px;display:flex;gap:7px}
+.kbd{border:1px solid #e2e8f0;border-radius:4px;padding:2px 5px;background:#f1f5f9;color:#64748b}
+#arch-hint{position:absolute;top:9px;left:11px;font-size:9px;color:#64748b;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-logo">
+        <div class="sb-logo-sq">⚡</div>
+        <div>
+          <div class="sb-logo-name">STUMP Platform</div>
+          <div class="sb-logo-sub">Strategic Transformation Unified Mapping</div>
+        </div>
+      </div>
+      <div class="sb-meta-lbl" id="sb-view-lbl">Current View</div>
+      <div class="sb-phase-name" id="sb-phase">Platform Overview</div>
+      <div class="sb-prog-hdr"><span id="sb-prog-left">Phases</span><span id="sb-prog-txt">7 Phases</span></div>
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="sb-prog-fill" style="width:100%;background:#3b82f6"></div></div>
+    </div>
+    <div class="sb-body" id="sb-body"></div>
+    <div class="sb-ctrl">
+      <div class="ctrl-btn" onclick="goBack()">&#8592;</div>
+      <div class="ctrl-btn play" id="play-btn" onclick="togglePlay()">&#9654; Play</div>
+      <div class="ctrl-btn" onclick="goFwd()">&#8594;</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="pip-bar"><div class="pip-steps" id="pip-steps"></div></div>
+    <div class="canvas-area">
+      <canvas id="c"></canvas>
+      <div id="tooltip">
+        <div id="tt-cat"></div>
+        <div id="tt-name"></div>
+        <div id="tt-desc"></div>
+        <div id="tt-hint"></div>
+      </div>
+      <div id="step-info">
+        <div class="si-lbl" id="si-lbl"></div>
+        <div class="si-name" id="si-name"></div>
+        <div class="si-tag" id="si-tag"></div>
+        <div class="si-nodes" id="si-nodes"></div>
+      </div>
+      <div id="legend">
+        <div class="leg-item"><div class="leg-line"></div><span>Data flow</span></div>
+        <div class="leg-item"><div class="leg-dot"></div><span>Hover for detail</span></div>
+      </div>
+      <div id="kbd-hint">
+        <span class="kbd">←→</span><span style="color:#94a3b8">navigate</span>
+        <span class="kbd">Space</span><span style="color:#94a3b8">play</span>
+      </div>
+      <div id="arch-hint">🖱 Double-click any phase node to explore its workflow</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ── ARCH — platform overview (7-phase pipeline)
+// ══════════════════════════════════════════════════════════
+const ARCH = {
+  name:'Platform Overview',
+  tagline:'End-to-end VSM journey — from ALM data ingestion to AI-governed transformation. Double-click any phase to explore its internal workflow.',
+  color:'#3b82f6',
+  nodes:{
+    s0:{label:'Setup & Data',         num:0, phase:'Foundation',    icon:'🔌', desc:'Connect ALM tools, run DORA and DevOps maturity assessments, analyse legacy portfolio', color:'#3b82f6', x:.10,y:.32, stepId:0},
+    s1:{label:'VSM Authoring',        num:1, phase:'Mapping',       icon:'🗺️', desc:'Build the current state value stream map using the drag-and-drop VSM Editor',          color:'#8b5cf6', x:.34,y:.32, stepId:1},
+    s2:{label:'Current State Analysis',num:2,phase:'Analysis',      icon:'📊', desc:'AI-computed flow metrics, bottleneck detection and lean waste categorisation',          color:'#06b6d4', x:.62,y:.32, stepId:2},
+    s3:{label:'Ops Intelligence',     num:3, phase:'Analysis',      icon:'📡', desc:'Live DORA four keys, sprint velocity trends, anomaly detection and AI insight briefs',  color:'#10b981', x:.88,y:.32, stepId:3},
+    s4:{label:'Future State Design',  num:4, phase:'Future State',  icon:'🔭', desc:'AI-optimised future VSM, ROI-modelled business case and phased transformation roadmap', color:'#f59e0b', x:.72,y:.68, stepId:4},
+    s5:{label:'Transformation Ready', num:5, phase:'Readiness',     icon:'✅', desc:'12-dimension readiness assessment, gap analysis, change plan and stakeholder map',      color:'#a78bfa', x:.42,y:.68, stepId:5},
+    s6:{label:'AI & Governance',      num:6, phase:'Governance',    icon:'🤖', desc:'RAG-grounded AI agents, contextual playbooks, governance guardrails and AI assurance',  color:'#D8273F', x:.12,y:.68, stepId:6},
+  },
+  edges:[
+    {a:'s0',b:'s1'},{a:'s1',b:'s2'},{a:'s2',b:'s3'},
+    {a:'s3',b:'s4'},
+    {a:'s4',b:'s5'},{a:'s5',b:'s6'},
+  ],
+  phases:[
+    {label:'FOUNDATION & MAPPING', color:'#3b82f6', xc:.22, row:1},
+    {label:'CURRENT STATE ANALYSIS', color:'#06b6d4', xc:.75, row:1},
+    {label:'FUTURE STATE & READINESS', color:'#f59e0b', xc:.57, row:2},
+    {label:'AI & GOVERNANCE', color:'#D8273F', xc:.12, row:2},
+  ],
+};
+
+// ══════════════════════════════════════════════════════════
+// ── SYSARCH — system / technical architecture
+// ══════════════════════════════════════════════════════════
+const SYSARCH = {
+  name:'System Architecture',
+  tagline:'Technical component topology — React frontend, FastAPI backend, RAG engine, ALM connectors and AI inference wired end-to-end.',
+  color:'#0ea5e9',
+  nodes:{
+    ui:  {label:'React Frontend',    cat:'Presentation', desc:'React 18 + Vite + Tailwind CSS — 20-page STUMP platform with VSM Editor, DORA dashboards and interactive workflow diagrams', color:'#38bdf8', x:.50, y:.17},
+    api: {label:'FastAPI Backend',   cat:'Application',  desc:'Async REST API at :8001 — routers for VSM, DORA, maturity, legacy, future state, AI agents, governance and export', color:'#0ea5e9', x:.22, y:.50},
+    rag: {label:'RAG Engine',        cat:'Application',  desc:'Hybrid BM25 + semantic retrieval over uploaded playbooks, standards and benchmarks — accuracy scored per agent response', color:'#7c3aed', x:.50, y:.50},
+    ai:  {label:'AI Orchestrator',   cat:'Application',  desc:'Claude / GPT-4o — prompt chaining across 7 AI modules: DORA, VSM analysis, bottleneck, future state, readiness and agent pipeline', color:'#8b5cf6', x:.78, y:.50},
+    alm: {label:'ALM Connectors',    cat:'Integration',  desc:'Jira, Azure DevOps and GitHub adapters — syncs epics, cycle time, deploy frequency and change failure rate in real-time', color:'#ef4444', x:.18, y:.83},
+    db:  {label:'PostgreSQL',        cat:'Data Store',   desc:'Primary data store at :8001 — VSM maps, assessment scores, maturity results, business cases and agent outputs via SQLAlchemy async ORM', color:'#16a34a', x:.40, y:.83},
+    vec: {label:'Vector Store',      cat:'Data Store',   desc:'OpenAI/local embeddings — chunked playbooks and standards indexed for hybrid RAG retrieval with cosine similarity ranking', color:'#059669', x:.62, y:.83},
+    oai: {label:'Claude / GPT-4o',   cat:'External AI',  desc:'Primary inference: structured JSON outputs, function calling, 128k context — used by all 7 STUMP AI modules', color:'#f59e0b', x:.84, y:.83},
+  },
+  edges:[
+    {a:'ui',  b:'api'},
+    {a:'api', b:'rag'},
+    {a:'api', b:'ai'},
+    {a:'api', b:'db'},
+    {a:'api', b:'alm'},
+    {a:'rag', b:'vec'},
+    {a:'rag', b:'ai'},
+    {a:'ai',  b:'oai'},
+  ],
+  layers:[
+    {label:'PRESENTATION', color:'#38bdf8', yc:.07},
+    {label:'APPLICATION',  color:'#0ea5e9', yc:.39},
+    {label:'DATA & INTEGRATION', color:'#16a34a', yc:.72},
+  ],
+};
+
+// ══════════════════════════════════════════════════════════
+// ── FUNCARCH — functional / capability architecture
+// ══════════════════════════════════════════════════════════
+const FUNCARCH = {
+  name:'Functional Architecture',
+  tagline:'End-to-end capability map — from ALM data and playbook inputs through AI intelligence and governance gates to transformation outputs.',
+  color:'#10b981',
+  nodes:{
+    alm_in: {label:'ALM Data',          cat:'Input',       desc:'Jira, Azure DevOps, GitHub — cycle time, deploy frequency, CFR and MTTR synced per project', color:'#3b82f6', x:.17, y:.15},
+    docs:   {label:'Playbooks & Stds',  cat:'Input',       desc:'Uploaded transformation playbooks, engineering standards and DORA benchmarks — chunked and embedded for RAG', color:'#06b6d4', x:.50, y:.15},
+    bench:  {label:'DORA Benchmarks',   cat:'Input',       desc:'Elite / High / Medium / Low DORA targets and industry VSM cycle-time benchmarks for AI comparison', color:'#818cf8', x:.83, y:.15},
+    assess: {label:'Assessment Engine', cat:'Intelligence', desc:'DORA scoring, DevOps maturity radar and legacy risk scores — grounding the current state baseline', color:'#3b82f6', x:.10, y:.41},
+    vsm_e:  {label:'VSM Engine',        cat:'Intelligence', desc:'Flow efficiency, lead time, takt time and throughput calculation — feeds bottleneck and waste AI', color:'#8b5cf6', x:.30, y:.41},
+    anlys:  {label:'Analysis AI',       cat:'Intelligence', desc:'AI bottleneck detection using Little\'s Law, lean waste categorisation and improvement prioritisation', color:'#06b6d4', x:.50, y:.41},
+    fstate: {label:'Future State AI',   cat:'Intelligence', desc:'AI-optimised future VSM using pull systems, takt alignment and waste elimination — with ROI business case model', color:'#f59e0b', x:.70, y:.41},
+    agents: {label:'AI Agents',         cat:'Intelligence', desc:'Discovery, Lean VSM, Future Vision, Risk & Compliance agents — autonomous structured outputs per PDLC phase', color:'#D8273F', x:.90, y:.41},
+    gates:  {label:'Governance Gates',  cat:'Governance',  desc:'Human-in-the-loop review checkpoints — output validation, bias detection and stakeholder approval gates per agent', color:'#ef4444', x:.32, y:.64},
+    audit:  {label:'Audit Trail',       cat:'Governance',  desc:'Full traceability: ALM data → VSM analysis → future state → business case — every AI output logged and versioned', color:'#f97316', x:.68, y:.64},
+    reports:{label:'VSM Reports',       cat:'Output',      desc:'Flow efficiency dashboards, bottleneck heatmaps, DORA gauges and maturity radars — exportable as PDF', color:'#10b981', x:.17, y:.87},
+    roadmap:{label:'Transformation Map',cat:'Output',      desc:'Phased delivery roadmap: quick wins (0–3 m), structural change (3–12 m), target state (12–24 m)', color:'#34d399', x:.50, y:.87},
+    export: {label:'Jira / ADO Export', cat:'Output',      desc:'Import-ready JSON and CSV for Jira, Azure DevOps — epics, stories, transformation initiatives and OKRs', color:'#6ee7b7', x:.83, y:.87},
+  },
+  edges:[
+    {a:'alm_in', b:'assess'},
+    {a:'alm_in', b:'vsm_e'},
+    {a:'docs',   b:'anlys'},
+    {a:'docs',   b:'agents'},
+    {a:'bench',  b:'assess'},
+    {a:'bench',  b:'anlys'},
+    {a:'vsm_e',  b:'anlys'},
+    {a:'anlys',  b:'fstate'},
+    {a:'fstate', b:'agents'},
+    {a:'assess', b:'gates'},
+    {a:'fstate', b:'gates'},
+    {a:'agents', b:'gates'},
+    {a:'gates',  b:'audit'},
+    {a:'gates',  b:'reports'},
+    {a:'audit',  b:'roadmap'},
+    {a:'roadmap',b:'export'},
+  ],
+  layers:[
+    {label:'INPUT',        color:'#06b6d4', yc:.06},
+    {label:'INTELLIGENCE', color:'#8b5cf6', yc:.31},
+    {label:'GOVERNANCE',   color:'#ef4444', yc:.54},
+    {label:'OUTPUT',       color:'#10b981', yc:.77},
+  ],
+};
+
+// ══════════════════════════════════════════════════════════
+// ── WORKFLOW STEPS
+// ══════════════════════════════════════════════════════════
+const PHASES=[
+  {name:'Foundation',   color:'#3b82f6'},
+  {name:'Mapping',      color:'#8b5cf6'},
+  {name:'Current State',color:'#06b6d4'},
+  {name:'Ops Intel',    color:'#10b981'},
+  {name:'Future State', color:'#f59e0b'},
+  {name:'Readiness',    color:'#a78bfa'},
+  {name:'AI & Governance', color:'#D8273F'},
+];
+
+const STEPS=[
+  {id:0, icon:'🔌', name:'Setup & Data', phase:0,
+   tagline:'Connect ALM tools, run DORA and DevOps maturity assessments, analyse legacy portfolio to establish a factual project baseline.',
+   nodes:{
+     alm:  {label:'ALM Connector',   cat:'Integration',  desc:'Connect Jira, Azure DevOps or GitHub — syncs epics, stories, cycle time and deployment frequency in real time',               color:'#3b82f6', x:.12,y:.50},
+     dora: {label:'DORA Engine',     cat:'Assessment',   desc:'Measures all 4 DORA metrics: Lead Time, Deploy Frequency, MTTR and Change Failure Rate against Elite/High/Medium/Low bands',   color:'#60a5fa', x:.33,y:.30},
+     mat:  {label:'Maturity Scorer', cat:'Assessment',   desc:'DevOps maturity radar across 5 dimensions — scored 1–5 with AI-recommended improvement actions per band',                       color:'#60a5fa', x:.33,y:.70},
+     leg:  {label:'Legacy Analyser', cat:'Analysis',     desc:'Technical debt assessment — identifies modernisation candidates by strangler fig, lift-shift or replatform strategy and risk score', color:'#818cf8', x:.62,y:.50},
+     base: {label:'Baseline Store',  cat:'Output',       desc:'Unified baseline: DORA metrics, maturity scores, legacy risk scores and ALM project context — grounding every downstream AI module', color:'#3b82f6', x:.87,y:.50},
+   },
+   edges:[['alm','dora'],['alm','mat'],['dora','leg'],['mat','leg'],['leg','base']]},
+
+  {id:1, icon:'🗺️', name:'VSM Authoring', phase:1,
+   tagline:'Capture the current state value stream: process steps, flow connections, process and wait times, and WIP inventory levels.',
+   nodes:{
+     proc: {label:'Process Capture',  cat:'Input',    desc:'Define swim lanes, roles, process steps and decision points using the drag-and-drop STUMP VSM Editor',              color:'#8b5cf6', x:.10,y:.50},
+     flow: {label:'Flow Mapper',      cat:'Authoring',desc:'Connect process nodes with directional arrows — push/pull signals, information flows and trigger connections',       color:'#a78bfa', x:.32,y:.30},
+     time: {label:'Time Annotator',   cat:'Authoring',desc:'Tag each step: process time, wait time, uptime %, batch size — consumed by the bottleneck and flow efficiency AI',   color:'#a78bfa', x:.32,y:.70},
+     inv:  {label:'Inventory Logger', cat:'Data',     desc:'Capture WIP counts, queue depths and defect escape rates per process step — enables Little\'s Law throughput analysis', color:'#c4b5fd', x:.61,y:.50},
+     vsm:  {label:'VSM Diagram',      cat:'Output',   desc:'Completed current state value stream map — stored, versioned and used as input for analysis and future state design', color:'#7c3aed', x:.87,y:.50},
+   },
+   edges:[['proc','flow'],['proc','time'],['flow','inv'],['time','inv'],['inv','vsm']]},
+
+  {id:2, icon:'📊', name:'Current State Analysis', phase:2,
+   tagline:'AI computes flow efficiency, lead time and throughput; identifies bottlenecks using Little\'s Law and maps lean waste per step.',
+   nodes:{
+     inp:  {label:'VSM Input',        cat:'Input',    desc:'Current state VSM with step timings, WIP counts, inventory levels and flow connections from Step 1',                 color:'#06b6d4', x:.10,y:.50},
+     aig:  {label:'Flow AI',          cat:'AI Engine',desc:'Calculates flow efficiency (VA time / total time), lead time, takt time, throughput and cycle time per step',        color:'#0ea5e9', x:.32,y:.50},
+     flw:  {label:'Flow Metrics',     cat:'Analysis', desc:'Lead time, cycle time, wait time, throughput rate, WIP and queue depth — visualised per value stream step',          color:'#38bdf8', x:.58,y:.25},
+     bnk:  {label:'Bottleneck AI',    cat:'AI Engine',desc:'AI identifies capacity constraints using Little\'s Law — rates root causes and ranks constraints by flow impact',     color:'#ef4444', x:.58,y:.50},
+     waste:{label:'Waste Map',        cat:'Analysis', desc:'7 lean wastes flagged per step: defects, overproduction, waiting, non-utilised talent, transport, inventory, motion', color:'#f97316', x:.58,y:.75},
+     rep:  {label:'Analysis Report',  cat:'Output',   desc:'Visual dashboard: bottleneck heatmap, waste Pareto chart, flow efficiency gauge and recommended improvement priorities', color:'#06b6d4', x:.86,y:.50},
+   },
+   edges:[['inp','aig'],['aig','flw'],['aig','bnk'],['aig','waste'],['flw','rep'],['bnk','rep'],['waste','rep']]},
+
+  {id:3, icon:'📡', name:'Operations Intelligence', phase:3,
+   tagline:'Live DORA four keys, sprint velocity trends, anomaly detection and AI-generated operational insight briefs per team.',
+   nodes:{
+     ops:  {label:'Ops Data Feed',    cat:'Input',    desc:'ALM cycle time, sprint velocity, incident rates, deployment frequency and monitoring telemetry — refreshed per sync', color:'#10b981', x:.11,y:.50},
+     inf:  {label:'AI Inference',     cat:'AI Engine',desc:'Detects patterns, anomalies and trends across deploy frequency, lead time and defect rates using time-series analysis', color:'#059669', x:.35,y:.50},
+     kpi:  {label:'KPI Dashboard',    cat:'Output',   desc:'Live DORA four keys with RAG-status vs Elite/High/Medium/Low bands — flow metrics and quality indicators per team', color:'#34d399', x:.61,y:.28},
+     trd:  {label:'Trend Analysis',   cat:'Analysis', desc:'Sprint-over-sprint velocity trends, defect escape rate and mean cycle time — with 3-sprint predictive forecasts',     color:'#34d399', x:.61,y:.72},
+     rep:  {label:'Insight Report',   cat:'Output',   desc:'AI-generated operations brief: top 5 flow risks, recommended mitigations and DORA improvement targets per team',     color:'#6ee7b7', x:.87,y:.50},
+   },
+   edges:[['ops','inf'],['inf','kpi'],['inf','trd'],['kpi','rep'],['trd','rep']]},
+
+  {id:4, icon:'🔭', name:'Future State Design', phase:4,
+   tagline:'AI generates the optimised future VSM using lean principles, then builds an ROI business case and phased transformation roadmap.',
+   nodes:{
+     cur:  {label:'Current Baseline', cat:'Input',    desc:'Flow metrics, bottleneck analysis and waste map from Steps 2–3 as AI optimisation starting point',                    color:'#f59e0b', x:.10,y:.50},
+     opt:  {label:'AI Optimizer',     cat:'AI Engine',desc:'Generates future state VSM using lean principles: single-piece flow, pull systems, takt alignment and waste elimination', color:'#d97706', x:.33,y:.50},
+     fvsm: {label:'Future VSM',       cat:'Output',   desc:'Target state value stream: projected cycle times, eliminated wastes, new automation touchpoints and tool integrations', color:'#fbbf24', x:.60,y:.28},
+     bcase:{label:'Business Case',    cat:'Output',   desc:'ROI model: lead time reduction, quality improvement, cost avoidance and productivity gains with 3-year NPV projection', color:'#fb923c', x:.60,y:.72},
+     rdm:  {label:'Transformation Map',cat:'Output',  desc:'Phased roadmap: quick wins (0–3 m), structural changes (3–12 m), target state (12–24 m) with team assignments',        color:'#f97316', x:.87,y:.50},
+   },
+   edges:[['cur','opt'],['opt','fvsm'],['opt','bcase'],['fvsm','rdm'],['bcase','rdm']]},
+
+  {id:5, icon:'✅', name:'Transformation Readiness', phase:5,
+   tagline:'AI scores 12 readiness dimensions across people, process and technology — producing a gap analysis, change plan and readiness report.',
+   nodes:{
+     org:  {label:'Org Assessment',   cat:'Input',    desc:'Evaluates people (skills, culture), process (governance, agility) and technology (toolchain, automation) readiness',  color:'#8b5cf6', x:.10,y:.50},
+     rsc:  {label:'Readiness Scorer', cat:'AI Engine',desc:'AI scores 12 dimensions 1–5 against transformation requirements with evidence from ALM data and maturity assessments',  color:'#7c3aed', x:.33,y:.50},
+     gap:  {label:'Gap Analysis',     cat:'Analysis', desc:'Delta between current maturity and target state per dimension — prioritised by effort level and transformation impact',  color:'#a78bfa', x:.60,y:.28},
+     chg:  {label:'Change Plan',      cat:'Output',   desc:'Stakeholder map, communication plan, training needs analysis and change impact assessment per team and phase',           color:'#c4b5fd', x:.60,y:.72},
+     rep:  {label:'Readiness Report', cat:'Output',   desc:'Composite readiness score with heatmap, critical blockers, risk register and phased capability build plan',             color:'#6d28d9', x:.87,y:.50},
+   },
+   edges:[['org','rsc'],['rsc','gap'],['rsc','chg'],['gap','rep'],['chg','rep']]},
+
+  {id:6, icon:'🤖', name:'AI Insights & Governance', phase:6,
+   tagline:'RAG-grounded AI agents deliver recommendations and playbooks; governance gates validate every output with full audit trail.',
+   nodes:{
+     rag:  {label:'RAG Engine',       cat:'AI Retrieval',desc:'Hybrid BM25 + semantic retrieval over uploaded playbooks and standards — accuracy and confidence scored per response', color:'#D8273F', x:.10,y:.50},
+     agt:  {label:'AI Agents',        cat:'AI Engine',   desc:'Discovery, Lean VSM, Future State Vision and Risk & Compliance agents — autonomous structured outputs per PDLC phase', color:'#dc2626', x:.32,y:.28},
+     rec:  {label:'Recommendations',  cat:'Output',      desc:'AI-ranked improvement actions with effort, impact and confidence scores — linked to specific VSM bottlenecks',         color:'#f87171', x:.32,y:.72},
+     pb:   {label:'Contextual Playbook',cat:'Guidance',  desc:'Option A/B/C playbooks contextualised to project data — editable org change, tooling, DevSecOps and AIOps sections',  color:'#fb923c', x:.60,y:.28},
+     gov:  {label:'Governance Engine', cat:'Governance', desc:'AI guardrails: output validation, bias detection, human-in-the-loop gates and audit trail per agent run',              color:'#6366f1', x:.60,y:.72},
+     asr:  {label:'AI Assurance',      cat:'Output',     desc:'Model accuracy report: RAG precision, agent confidence scores, override rates and assurance certification status',      color:'#4f46e5', x:.87,y:.50},
+   },
+   edges:[['rag','agt'],['rag','rec'],['agt','pb'],['agt','gov'],['rec','asr'],['pb','asr'],['gov','asr']]},
+];
+
+// ══════════════════════════════════════════════════════════
+// ── STATE
+// ══════════════════════════════════════════════════════════
+const NW=132, NH=52, NHA=66;
+let cur=-1, W=0, H=0;
+let particles=[];
+let playing=false, playTimer=null;
+let transAlpha=1, transState=null, transDest=null;
+let hoveredNode=null;
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+function getView(){
+  if(cur===-1) return ARCH;
+  if(cur===-2) return SYSARCH;
+  if(cur===-3) return FUNCARCH;
+  return STEPS[cur];
+}
+function getColor(){
+  if(cur===-1) return ARCH.color;
+  if(cur===-2) return SYSARCH.color;
+  if(cur===-3) return FUNCARCH.color;
+  return PHASES[STEPS[cur].phase].color;
+}
+
+function resize(){
+  const el=canvas.parentElement;
+  W=el.clientWidth; H=el.clientHeight;
+  canvas.width=W; canvas.height=H;
+}
+
+function nodeH(n){ return (n.stepId!==undefined) ? NHA : NH; }
+
+// ══════════════════════════════════════════════════════════
+// ── GEOMETRY
+// ══════════════════════════════════════════════════════════
+function rrect(cx,cy,w,h,r){
+  const x=cx-w/2, y=cy-h/2;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arc(x+w-r,y+r,r,-Math.PI/2,0);
+  ctx.lineTo(x+w,y+h-r); ctx.arc(x+w-r,y+h-r,r,0,Math.PI/2);
+  ctx.lineTo(x+r,y+h); ctx.arc(x+r,y+h-r,r,Math.PI/2,Math.PI);
+  ctx.lineTo(x,y+r); ctx.arc(x+r,y+r,r,Math.PI,-Math.PI/2);
+  ctx.closePath();
+}
+
+function cubic(p0,p1,p2,p3,t){
+  const m=1-t;
+  return{x:m*m*m*p0.x+3*m*m*t*p1.x+3*m*t*t*p2.x+t*t*t*p3.x,
+         y:m*m*m*p0.y+3*m*m*t*p1.y+3*m*t*t*p2.y+t*t*t*p3.y};
+}
+
+function edgePtsDir(na,nb){
+  const dx=nb.x-na.x, dy=nb.y-na.y;
+  const nh_a=nodeH(na), nh_b=nodeH(nb);
+  let pa, pb;
+  if(Math.abs(dy)>Math.abs(dx)*0.7){
+    if(dy>0){pa={x:na.x*W,y:na.y*H+nh_a/2};pb={x:nb.x*W,y:nb.y*H-nh_b/2};}
+    else     {pa={x:na.x*W,y:na.y*H-nh_a/2};pb={x:nb.x*W,y:nb.y*H+nh_b/2};}
+    const dd=pb.y-pa.y;
+    return{pa,pb,cp1:{x:pa.x+dx*W*.15,y:pa.y+dd*.4},cp2:{x:pb.x-dx*W*.15,y:pb.y-dd*.4}};
+  } else if(dx>0){
+    pa={x:na.x*W+NW/2,y:na.y*H}; pb={x:nb.x*W-NW/2,y:nb.y*H};
+  } else {
+    pa={x:na.x*W-NW/2,y:na.y*H}; pb={x:nb.x*W+NW/2,y:nb.y*H};
+  }
+  const dd=pb.x-pa.x;
+  return{pa,pb,cp1:{x:pa.x+dd*.5,y:pa.y},cp2:{x:pb.x-dd*.5,y:pb.y}};
+}
+
+function edgePts(a,b){
+  const pa={x:a.x*W+NW/2,y:a.y*H};
+  const pb={x:b.x*W-NW/2,y:b.y*H};
+  const dx=pb.x-pa.x;
+  return{pa,pb,cp1:{x:pa.x+dx*.5,y:pa.y},cp2:{x:pb.x-dx*.5,y:pb.y}};
+}
+
+// ══════════════════════════════════════════════════════════
+// ── DRAW
+// ══════════════════════════════════════════════════════════
+function drawNode(key,n){
+  const cx=n.x*W, cy=n.y*H;
+  const hot=hoveredNode===key;
+  const nh=nodeH(n);
+  const nx=cx-NW/2, ny=cy-nh/2;
+  ctx.save();
+  ctx.globalAlpha=transAlpha;
+  ctx.shadowColor=n.color; ctx.shadowBlur=hot?28:10;
+  rrect(cx,cy,NW,nh,9);
+  ctx.fillStyle=hot?n.color+'40':n.color+'1a'; ctx.fill();
+  ctx.shadowBlur=0;
+  rrect(cx,cy,NW,nh,9);
+  ctx.strokeStyle=hot?n.color:n.color+'80';
+  ctx.lineWidth=hot?2:1.2; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(nx+9,ny+1.5); ctx.lineTo(nx+NW-9,ny+1.5);
+  ctx.strokeStyle=hot?n.color:n.color+'cc';
+  ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke(); ctx.lineCap='butt';
+  if(n.stepId!==undefined){
+    ctx.font='700 9px -apple-system,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle=hot?n.color:n.color+'cc';
+    ctx.fillText('PHASE '+n.num,cx,cy-14);
+    ctx.font='700 11.5px -apple-system,sans-serif';
+    ctx.fillStyle='#1e293b';
+    ctx.fillText(n.label,cx,cy+1);
+    ctx.font='8px -apple-system,sans-serif';
+    ctx.fillStyle=hot?n.color:n.color+'99';
+    ctx.fillText(n.phase,cx,cy+15);
+    if(hot){
+      ctx.font='8px -apple-system,sans-serif';
+      ctx.fillStyle='#64748b';
+      ctx.fillText('↵ double-click to explore',cx,ny+nh-6);
+    }
+  } else {
+    ctx.font='8px -apple-system,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle=hot?n.color:n.color+'cc';
+    ctx.fillText(n.cat.toUpperCase(),cx,cy-9);
+    ctx.font='600 11.5px -apple-system,sans-serif';
+    ctx.fillStyle='#1e293b';
+    ctx.fillText(n.label,cx,cy+7);
+  }
+  ctx.restore();
+}
+
+function drawEdge(na,nb,isArch){
+  const ep=isArch?edgePtsDir(na,nb):edgePts(na,nb);
+  const{pa,pb,cp1,cp2}=ep;
+  ctx.save();
+  ctx.globalAlpha=0.55*transAlpha;
+  ctx.beginPath();
+  ctx.moveTo(pa.x,pa.y);
+  ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,pb.x,pb.y);
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1.2;
+  ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
+  const t1=cubic(pa,cp1,cp2,pb,.97), t2=cubic(pa,cp1,cp2,pb,1);
+  const ang=Math.atan2(t2.y-t1.y,t2.x-t1.x), as=7;
+  ctx.beginPath();
+  ctx.moveTo(pb.x,pb.y);
+  ctx.lineTo(pb.x-as*Math.cos(ang-.4),pb.y-as*Math.sin(ang-.4));
+  ctx.moveTo(pb.x,pb.y);
+  ctx.lineTo(pb.x-as*Math.cos(ang+.4),pb.y-as*Math.sin(ang+.4));
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1.2; ctx.stroke();
+  ctx.restore();
+}
+
+function spawnAll(){
+  const v=getView(); const col=getColor(); const isArch=cur<0;
+  v.edges.forEach(e=>{
+    const ak=isArch?e.a:e[0], bk=isArch?e.b:e[1];
+    const na=v.nodes[ak], nb=v.nodes[bk];
+    if(!na||!nb) return;
+    const ep=isArch?edgePtsDir(na,nb):edgePts(na,nb);
+    const{pa,pb,cp1,cp2}=ep;
+    for(let i=0;i<3;i++) particles.push({
+      pa:{...pa},pb:{...pb},cp1:{...cp1},cp2:{...cp2},
+      t:i*.28, speed:.005+Math.random()*.003,
+      color:col, size:2.4,
+    });
+  });
+}
+
+function drawParticles(){
+  const live=[];
+  particles.forEach(p=>{
+    p.t+=p.speed;
+    if(p.t>1.12) return;
+    live.push(p);
+    const pos=cubic(p.pa,p.cp1,p.cp2,p.pb,Math.min(p.t,1));
+    const a2=p.t>.85?(1.1-p.t)/.25:Math.min(p.t/.15,1);
+    ctx.save();
+    ctx.globalAlpha=a2*transAlpha*.85;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,p.size,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill();
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,p.size+2.5,0,Math.PI*2); ctx.fillStyle=p.color+'40'; ctx.fill();
+    ctx.restore();
+  });
+  particles=live;
+}
+
+// ══════════════════════════════════════════════════════════
+// ── RENDER LOOP
+// ══════════════════════════════════════════════════════════
+function render(){
+  requestAnimationFrame(render);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f4f6f9'; ctx.fillRect(0,0,W,H);
+
+  const col=getColor();
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,col+'08'); g.addColorStop(1,col+'02');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  ctx.save(); ctx.globalAlpha=0.18*transAlpha; ctx.fillStyle='#cbd5e1';
+  for(let x=30;x<W;x+=42) for(let y=30;y<H;y+=42){
+    ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  if(cur<0){
+    if(cur===-1){
+      ARCH.phases.forEach(p=>{
+        const yPos=p.row===1?0.14:0.85;
+        ctx.save(); ctx.globalAlpha=0.35*transAlpha;
+        ctx.font='700 9px -apple-system,sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle=p.color;
+        ctx.fillText('— '+p.label+' —',p.xc*W,yPos*H);
+        ctx.restore();
+      });
+      ctx.save(); ctx.globalAlpha=0.18*transAlpha;
+      ctx.font='700 11px -apple-system,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#3b82f6';
+      ctx.fillText('7 Phases · 36 Activities',W/2,.50*H);
+      ctx.restore();
+    } else {
+      const view=getView();
+      view.layers.forEach(l=>{
+        ctx.save(); ctx.globalAlpha=0.38*transAlpha;
+        ctx.font='700 8px -apple-system,sans-serif';
+        ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillStyle=l.color;
+        ctx.fillText('— '+l.label+' —', 14, l.yc*H);
+        ctx.restore();
+      });
+    }
+  }
+
+  if(transState==='out'){
+    transAlpha-=0.08;
+    if(transAlpha<=0){
+      transAlpha=0; cur=transDest;
+      particles=[]; hoveredNode=null;
+      updateUI(); spawnAll();
+      transState='in';
+    }
+  } else if(transState==='in'){
+    transAlpha+=0.07;
+    if(transAlpha>=1){transAlpha=1;transState=null;}
+  }
+
+  const v=getView(); const isArch=cur<0;
+  v.edges.forEach(e=>{
+    const ak=isArch?e.a:e[0], bk=isArch?e.b:e[1];
+    const na=v.nodes[ak], nb=v.nodes[bk];
+    if(na&&nb) drawEdge(na,nb,isArch);
+  });
+  drawParticles();
+  Object.entries(v.nodes).forEach(([k,n])=>drawNode(k,n));
+}
+
+// ══════════════════════════════════════════════════════════
+// ── NAVIGATION
+// ══════════════════════════════════════════════════════════
+function activateView(idx){
+  if(transState!==null||idx===cur) return;
+  transDest=idx; transState='out';
+}
+function goFwd(){
+  if(cur===-1)      activateView(-2);
+  else if(cur===-2) activateView(-3);
+  else if(cur===-3) activateView(0);
+  else              activateView((cur+1)%STEPS.length);
+}
+function goBack(){
+  if(cur===-1)      activateView(STEPS.length-1);
+  else if(cur===-2) activateView(-1);
+  else if(cur===-3) activateView(-2);
+  else if(cur===0)  activateView(-3);
+  else              activateView(cur-1);
+}
+function togglePlay(){
+  playing=!playing;
+  const btn=document.getElementById('play-btn');
+  if(playing){btn.textContent='⏸ Pause';btn.classList.add('on');playTimer=setInterval(goFwd,3200);}
+  else{btn.textContent='▶ Play';btn.classList.remove('on');clearInterval(playTimer);}
+}
+
+// ══════════════════════════════════════════════════════════
+// ── UPDATE UI
+// ══════════════════════════════════════════════════════════
+function updateUI(){
+  const archEl    =document.getElementById('sb-arch');
+  const sysarchEl =document.getElementById('sb-sysarch');
+  const funcarchEl=document.getElementById('sb-funcarch');
+  const sbSteps   =document.querySelectorAll('.sb-step');
+  const archHint  =document.getElementById('arch-hint');
+
+  function clearAll(){
+    [archEl,sysarchEl,funcarchEl].forEach(el=>{
+      if(el){el.classList.remove('active');el.style.borderLeftColor='transparent';}
+    });
+    sbSteps.forEach(el=>{el.classList.remove('active');el.style.borderLeftColor='transparent';});
+  }
+
+  function setPipActive(archId){
+    document.querySelectorAll('.pip-node-wrap').forEach(el=>{
+      const aid=el.dataset.archid, sid=el.dataset.stepid;
+      let active=false, pc='#e2e8f0', pcg='#e2e8f055';
+      if(archId!==undefined){
+        active=(aid===String(archId));
+        if(active){pc=getColor();pcg=getColor()+'55';}
+      } else {
+        if(aid!==undefined){active=false;}
+        else{active=(parseInt(sid)===cur);if(active){pc=PHASES[STEPS[cur].phase].color;pcg=pc+'55';}}
+      }
+      el.classList.toggle('active',active);
+      el.style.setProperty('--pc',active?pc:'#1a2235');
+      el.style.setProperty('--pc-glow',pcg);
+    });
+  }
+
+  if(cur===-1){
+    document.getElementById('sb-view-lbl').textContent='Current View';
+    const ph=document.getElementById('sb-phase');
+    ph.textContent='Platform Overview'; ph.style.color=ARCH.color;
+    document.getElementById('sb-prog-left').textContent='Phases';
+    document.getElementById('sb-prog-txt').textContent='7 Phases';
+    document.getElementById('sb-prog-fill').style.width='100%';
+    document.getElementById('sb-prog-fill').style.background=ARCH.color;
+    clearAll();
+    if(archEl){archEl.classList.add('active');archEl.style.borderLeftColor=ARCH.color;}
+    setPipActive(-1);
+    document.querySelectorAll('.pip-line').forEach(el=>el.classList.remove('past'));
+    document.getElementById('si-lbl').textContent='Platform Overview · All 7 Phases';
+    document.getElementById('si-lbl').style.color=ARCH.color;
+    document.getElementById('si-name').textContent='End-to-End VSM Journey';
+    document.getElementById('si-tag').textContent=ARCH.tagline;
+    document.getElementById('si-nodes').innerHTML=Object.values(ARCH.nodes).map(n=>
+      `<span class="si-node-pill" style="border-color:${n.color}55;color:${n.color};background:${n.color}14">${n.label}</span>`
+    ).join('');
+    if(archHint) archHint.style.display='block';
+
+  } else if(cur===-2){
+    document.getElementById('sb-view-lbl').textContent='Architecture View';
+    const ph=document.getElementById('sb-phase');
+    ph.textContent='System Architecture'; ph.style.color=SYSARCH.color;
+    document.getElementById('sb-prog-left').textContent='Components';
+    document.getElementById('sb-prog-txt').textContent='8 Nodes';
+    document.getElementById('sb-prog-fill').style.width='100%';
+    document.getElementById('sb-prog-fill').style.background=SYSARCH.color;
+    clearAll();
+    if(sysarchEl){sysarchEl.classList.add('active');sysarchEl.style.borderLeftColor=SYSARCH.color;}
+    setPipActive(-2);
+    document.querySelectorAll('.pip-line').forEach(el=>el.classList.remove('past'));
+    document.getElementById('si-lbl').textContent='Architecture · Technical Stack';
+    document.getElementById('si-lbl').style.color=SYSARCH.color;
+    document.getElementById('si-name').textContent='System Architecture';
+    document.getElementById('si-tag').textContent=SYSARCH.tagline;
+    document.getElementById('si-nodes').innerHTML=Object.values(SYSARCH.nodes).map(n=>
+      `<span class="si-node-pill" style="border-color:${n.color}55;color:${n.color};background:${n.color}14">${n.label}</span>`
+    ).join('');
+    if(archHint) archHint.style.display='none';
+
+  } else if(cur===-3){
+    document.getElementById('sb-view-lbl').textContent='Architecture View';
+    const ph=document.getElementById('sb-phase');
+    ph.textContent='Functional Architecture'; ph.style.color=FUNCARCH.color;
+    document.getElementById('sb-prog-left').textContent='Capabilities';
+    document.getElementById('sb-prog-txt').textContent='13 Nodes';
+    document.getElementById('sb-prog-fill').style.width='100%';
+    document.getElementById('sb-prog-fill').style.background=FUNCARCH.color;
+    clearAll();
+    if(funcarchEl){funcarchEl.classList.add('active');funcarchEl.style.borderLeftColor=FUNCARCH.color;}
+    setPipActive(-3);
+    document.querySelectorAll('.pip-line').forEach(el=>el.classList.remove('past'));
+    document.getElementById('si-lbl').textContent='Architecture · Functional Capabilities';
+    document.getElementById('si-lbl').style.color=FUNCARCH.color;
+    document.getElementById('si-name').textContent='Functional Architecture';
+    document.getElementById('si-tag').textContent=FUNCARCH.tagline;
+    document.getElementById('si-nodes').innerHTML=Object.values(FUNCARCH.nodes).map(n=>
+      `<span class="si-node-pill" style="border-color:${n.color}55;color:${n.color};background:${n.color}14">${n.label}</span>`
+    ).join('');
+    if(archHint) archHint.style.display='none';
+
+  } else {
+    const s=STEPS[cur], ph=PHASES[s.phase];
+    document.getElementById('sb-view-lbl').textContent='Current Phase';
+    const phEl=document.getElementById('sb-phase');
+    phEl.textContent=ph.name; phEl.style.color=ph.color;
+    document.getElementById('sb-prog-left').textContent='Phase Progress';
+    document.getElementById('sb-prog-txt').textContent=String(cur+1).padStart(2,'0')+' / 07';
+    document.getElementById('sb-prog-fill').style.width=((cur+1)/7*100)+'%';
+    document.getElementById('sb-prog-fill').style.background=ph.color;
+    clearAll();
+    sbSteps.forEach((el,i)=>{
+      const active=i===cur;
+      el.classList.toggle('active',active);
+      el.style.borderLeftColor=active?PHASES[STEPS[i].phase].color:'transparent';
+    });
+    setPipActive(undefined);
+    document.querySelectorAll('.pip-line').forEach((el,i)=>el.classList.toggle('past',i<cur));
+    document.getElementById('si-lbl').textContent=`Phase: ${ph.name}  ·  Step ${s.id}`;
+    document.getElementById('si-lbl').style.color=ph.color;
+    document.getElementById('si-name').textContent=s.name;
+    document.getElementById('si-tag').textContent=s.tagline;
+    document.getElementById('si-nodes').innerHTML=Object.values(s.nodes).map(n=>
+      `<span class="si-node-pill" style="border-color:${n.color}55;color:${n.color};background:${n.color}14">${n.label}</span>`
+    ).join('');
+    if(archHint) archHint.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── BUILD SIDEBAR
+// ══════════════════════════════════════════════════════════
+const sbBody=document.getElementById('sb-body');
+
+// Platform Overview
+const archDiv=document.createElement('div');
+archDiv.className='sb-arch-item active'; archDiv.id='sb-arch';
+archDiv.style.borderLeftColor=ARCH.color;
+const archSubs=Object.entries(ARCH.nodes).map(([,n])=>
+  `<div class="sb-subnode"><div class="sb-subnode-dot" style="background:${n.color}"></div>Phase ${n.num}: ${n.label}</div>`
+).join('');
+archDiv.innerHTML=`
+  <div class="sb-arch-row">
+    <span class="sb-arch-ico">🗺️</span>
+    <div class="sb-arch-info">
+      <div class="sb-arch-name">Platform Overview</div>
+      <div class="sb-arch-sub" style="color:${ARCH.color}88">All 7 transformation phases</div>
+    </div>
+    <span class="sb-arch-badge">OVERVIEW</span>
+  </div>
+  <div class="sb-arch-subnodes">${archSubs}</div>`;
+archDiv.onclick=()=>{activateView(-1);if(playing)togglePlay();};
+sbBody.appendChild(archDiv);
+
+// System Architecture
+const sysarchDiv=document.createElement('div');
+sysarchDiv.className='sb-arch-item'; sysarchDiv.id='sb-sysarch';
+const sysarchSubs=Object.entries(SYSARCH.nodes).map(([,n])=>
+  `<div class="sb-subnode"><div class="sb-subnode-dot" style="background:${n.color}"></div>${n.cat}: ${n.label}</div>`
+).join('');
+sysarchDiv.innerHTML=`
+  <div class="sb-arch-row">
+    <span class="sb-arch-ico">⚙️</span>
+    <div class="sb-arch-info">
+      <div class="sb-arch-name">System Architecture</div>
+      <div class="sb-arch-sub" style="color:${SYSARCH.color}88">Tech stack &amp; integrations</div>
+    </div>
+    <span class="sb-arch-badge" style="background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.3);color:#7dd3fc">SYSTEM</span>
+  </div>
+  <div class="sb-arch-subnodes">${sysarchSubs}</div>`;
+sysarchDiv.onclick=()=>{activateView(-2);if(playing)togglePlay();};
+sbBody.appendChild(sysarchDiv);
+
+// Functional Architecture
+const funcarchDiv=document.createElement('div');
+funcarchDiv.className='sb-arch-item'; funcarchDiv.id='sb-funcarch';
+const funcarchSubs=Object.entries(FUNCARCH.nodes).map(([,n])=>
+  `<div class="sb-subnode"><div class="sb-subnode-dot" style="background:${n.color}"></div>${n.cat}: ${n.label}</div>`
+).join('');
+funcarchDiv.innerHTML=`
+  <div class="sb-arch-row">
+    <span class="sb-arch-ico">🔷</span>
+    <div class="sb-arch-info">
+      <div class="sb-arch-name">Functional Architecture</div>
+      <div class="sb-arch-sub" style="color:${FUNCARCH.color}88">Capabilities &amp; data flows</div>
+    </div>
+    <span class="sb-arch-badge" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3);color:#6ee7b7">FUNCTIONAL</span>
+  </div>
+  <div class="sb-arch-subnodes">${funcarchSubs}</div>`;
+funcarchDiv.onclick=()=>{activateView(-3);if(playing)togglePlay();};
+sbBody.appendChild(funcarchDiv);
+
+// Workflow Steps section
+const lbl=document.createElement('div');
+lbl.className='sb-section-lbl'; lbl.textContent='Workflow Phases';
+sbBody.appendChild(lbl);
+
+STEPS.forEach((s,i)=>{
+  const ph=PHASES[s.phase];
+  const div=document.createElement('div');
+  div.className='sb-step';
+  div.style.borderLeftColor='transparent';
+  const subs=Object.entries(s.nodes).map(([,n])=>
+    `<div class="sb-subnode"><div class="sb-subnode-dot" style="background:${n.color}"></div>${n.label}</div>`
+  ).join('');
+  div.innerHTML=`
+    <div class="sb-step-row">
+      <span class="sb-step-num">${String(i).padStart(2,'0')}</span>
+      <span class="sb-step-ico">${s.icon}</span>
+      <div class="sb-step-info">
+        <div class="sb-step-name">${s.name}</div>
+        <div class="sb-step-phase" style="color:${ph.color}66">${ph.name}</div>
+      </div>
+    </div>
+    <div class="sb-subnodes">${subs}</div>`;
+  div.onclick=()=>{activateView(i);if(playing)togglePlay();};
+  sbBody.appendChild(div);
+});
+
+// ══════════════════════════════════════════════════════════
+// ── BUILD PIPELINE BAR
+// ══════════════════════════════════════════════════════════
+const pipEl=document.getElementById('pip-steps');
+
+function makePipArch(archId,emoji,label,color,isActive){
+  const w=document.createElement('div');
+  w.className='pip-node-wrap pip-arch'+(isActive?' active':'');
+  w.dataset.archid=String(archId);
+  w.style.setProperty('--pc', isActive?color:'#e2e8f0');
+  w.style.setProperty('--pc-glow', color+'55');
+  w.innerHTML=`<div class="pip-circle">${emoji}</div><div class="pip-lbl">${label}</div>`;
+  w.onclick=()=>{activateView(archId);if(playing)togglePlay();};
+  return w;
+}
+
+pipEl.appendChild(makePipArch(-1,'🗺','Overview', ARCH.color, true));
+pipEl.appendChild(makePipArch(-2,'⚙','System',   SYSARCH.color, false));
+pipEl.appendChild(makePipArch(-3,'🔷','Functional',FUNCARCH.color, false));
+
+const sv=document.createElement('div'); sv.className='pip-sep-v'; pipEl.appendChild(sv);
+
+STEPS.forEach((s,i)=>{
+  const ph=PHASES[s.phase];
+  if(i>0){const ln=document.createElement('div');ln.className='pip-line';pipEl.appendChild(ln);}
+  const w=document.createElement('div');
+  w.className='pip-node-wrap';
+  w.dataset.stepid=String(i);
+  w.style.setProperty('--pc','#e2e8f0'); w.style.setProperty('--pc-glow',ph.color+'55');
+  w.innerHTML=`<div class="pip-circle">${i}</div><div class="pip-lbl">${s.name}</div>`;
+  w.onclick=()=>{activateView(i);if(playing)togglePlay();};
+  pipEl.appendChild(w);
+});
+
+// ══════════════════════════════════════════════════════════
+// ── HIT DETECTION
+// ══════════════════════════════════════════════════════════
+function hitNode(mx,my){
+  for(const[key,n] of Object.entries(getView().nodes)){
+    const nh=nodeH(n);
+    if(Math.abs(mx-n.x*W)<NW/2+4&&Math.abs(my-n.y*H)<nh/2+4) return{key,n};
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════
+// ── TOOLTIP
+// ══════════════════════════════════════════════════════════
+const tip=document.getElementById('tooltip');
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const hit=hitNode(mx,my);
+  if(hit){
+    hoveredNode=hit.key;
+    document.getElementById('tt-cat').textContent=hit.n.cat||(hit.n.phase||'');
+    document.getElementById('tt-cat').style.color=hit.n.color;
+    document.getElementById('tt-name').textContent=hit.n.label;
+    document.getElementById('tt-desc').textContent=hit.n.desc;
+    document.getElementById('tt-hint').textContent=
+      (hit.n.stepId!==undefined)?'↵ Double-click to explore this phase\'s workflow':'';
+    const px=Math.min(e.offsetX+14,canvas.parentElement.clientWidth-230);
+    const py=Math.max(e.offsetY-80,10);
+    tip.style.left=px+'px'; tip.style.top=py+'px'; tip.style.opacity='1';
+    canvas.style.cursor=(hit.n.stepId!==undefined)?'pointer':'default';
+  } else {
+    hoveredNode=null; tip.style.opacity='0'; canvas.style.cursor='default';
+  }
+});
+canvas.addEventListener('mouseleave',()=>{hoveredNode=null;tip.style.opacity='0';});
+
+canvas.addEventListener('click',e=>{
+  if(transState!==null) return;
+  const r=canvas.getBoundingClientRect();
+  const hit=hitNode(e.clientX-r.left,e.clientY-r.top);
+  if(hit&&hit.n.stepId!==undefined&&cur===-1) activateView(hit.n.stepId);
+});
+canvas.addEventListener('dblclick',e=>{
+  if(transState!==null) return;
+  const r=canvas.getBoundingClientRect();
+  const hit=hitNode(e.clientX-r.left,e.clientY-r.top);
+  if(hit&&hit.n.stepId!==undefined) activateView(hit.n.stepId);
+});
+
+// ══════════════════════════════════════════════════════════
+// ── KEYBOARD
+// ══════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){goFwd();if(playing)togglePlay();}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){goBack();if(playing)togglePlay();}
+  else if(e.key===' '){e.preventDefault();togglePlay();}
+  else if(e.key==='Escape'&&cur>=0) activateView(-1);
+});
+
+// ══════════════════════════════════════════════════════════
+// ── INIT
+// ══════════════════════════════════════════════════════════
+window.addEventListener('resize',resize);
+resize();
+updateUI();
+spawnAll();
+setInterval(()=>{if(!transState)spawnAll();},2800);
+render();
+</script>
+</body>
+</html>

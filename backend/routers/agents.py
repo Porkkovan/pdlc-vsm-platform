@@ -18,8 +18,9 @@ from ..agents.future_state_designer.agent import run_future_state_designer
 from ..agents.business_case_builder.agent import run_business_case_builder
 from ..agents.benchmark_agent.agent   import run_benchmark_agent
 from ..agents.playbook_contextualizer.agent import run_playbook_contextualizer
+from ..agents.automation_classifier.agent import classify_activities
 from ..database.db import get_db, AsyncSessionLocal
-from ..database.models import VSMSnapshot, AnalysisRun
+from ..database.models import VSMSnapshot, AnalysisRun, ManualAssessmentResponse
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -189,6 +190,31 @@ async def run_benchmark_ep(project_id: str, db: AsyncSession = Depends(get_db)):
     return {"benchmarks": result.get("benchmarks", {})}
 
 
+class SeedResultRequest(BaseModel):
+    result: dict
+    agents_run: Optional[list] = None
+
+
+@router.post("/seed-result/{project_id}", status_code=201)
+async def seed_analysis_result(project_id: str, req: SeedResultRequest, db: AsyncSession = Depends(get_db)):
+    """Insert a pre-built analysis result as a completed run (demo seed only)."""
+    run_id = str(uuid.uuid4())
+    now    = datetime.utcnow()
+    db_run = AnalysisRun(
+        id           = run_id,
+        project_id   = project_id,
+        status       = "complete",
+        agents_run   = req.agents_run or [],
+        result       = req.result,
+        created_at   = now,
+        completed_at = now,
+    )
+    db.add(db_run)
+    await db.commit()
+    _runs[run_id] = {"status": "complete", "project_id": project_id, "result": req.result}
+    return {"id": run_id, "project_id": project_id, "status": "complete"}
+
+
 class PlaybookContextRequest(BaseModel):
     scenario_id:    str
     scenario_label: str
@@ -208,3 +234,55 @@ async def contextualise_playbook(project_id: str, req: PlaybookContextRequest):
         documents=req.documents,
     )
     return result
+
+
+# ── Automation Classifier ────────────────────────────────────────────────────
+
+@router.post("/classify-automation/{project_id}")
+async def classify_automation(project_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Classify all 36 PDLC activities as Manual / RPA / AI-Assisted / AI-Agent.
+    Uses configured data sources, uploaded documents, VSM metrics, and
+    manual assessment responses as evidence.
+    """
+    # Load VSM data
+    state = await _load_vsm_state(project_id, db)
+    vsm_data = state.get("vsm_data")
+
+    # Load manual assessment responses
+    resp_result = await db.execute(
+        select(ManualAssessmentResponse)
+        .where(ManualAssessmentResponse.project_id == project_id)
+    )
+    resp_rows = resp_result.scalars().all()
+    manual_responses = {
+        r.question_id: {"response": r.response, "notes": r.notes}
+        for r in resp_rows
+    }
+
+    result = await classify_activities(
+        project_id=project_id,
+        vsm_data=vsm_data,
+        manual_responses=manual_responses,
+    )
+    return result
+
+
+@router.get("/automation-classifications/{project_id}")
+async def get_automation_classifications(project_id: str, db: AsyncSession = Depends(get_db)):
+    """GET endpoint — same as classify but cached-friendly (runs fresh each time for now)."""
+    state = await _load_vsm_state(project_id, db)
+    resp_result = await db.execute(
+        select(ManualAssessmentResponse)
+        .where(ManualAssessmentResponse.project_id == project_id)
+    )
+    resp_rows = resp_result.scalars().all()
+    manual_responses = {
+        r.question_id: {"response": r.response, "notes": r.notes}
+        for r in resp_rows
+    }
+    return await classify_activities(
+        project_id=project_id,
+        vsm_data=state.get("vsm_data"),
+        manual_responses=manual_responses,
+    )

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STUMP — Debug v2</title>
+    <link rel="stylesheet" href="/assets/index-CfAheoiZ.css">
+    <style>
+      body { padding: 20px; font-family: Inter, sans-serif; max-width: 900px; margin: 0 auto; }
+      h1 { color: #0ea5e9; }
+      .check { margin: 8px 0; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+      .ok { background: #d1fae5; border-color: #6ee7b7; }
+      .fail { background: #fee2e2; border-color: #fca5a5; }
+      #error-log { margin-top: 20px; background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    </style>
+  </head>
+  <body>
+    <h1>STUMP Debug v2 — Loading App Bundle</h1>
+    <div id="checks"></div>
+    <h3>Error Log</h3>
+    <div id="error-log">Listening...</div>
+    <hr>
+    <h3>App renders below this line:</h3>
+    <div id="root"></div>
+
+    <script>
+      var checks = document.getElementById('checks');
+      var errorLog = document.getElementById('error-log');
+      var errors = [];
+
+      function log(msg) {
+        errors.push('[' + new Date().toISOString().substr(11,12) + '] ' + msg);
+        errorLog.textContent = errors.join('\n');
+      }
+
+      function addCheck(name, ok, detail) {
+        var d = document.createElement('div');
+        d.className = 'check ' + (ok ? 'ok' : 'fail');
+        d.textContent = (ok ? 'PASS' : 'FAIL') + ' | ' + name + (detail ? ' — ' + detail : '');
+        checks.appendChild(d);
+      }
+
+      // Capture ALL errors
+      window.onerror = function(msg, url, line, col, err) {
+        log('ONERROR: ' + msg + ' at ' + (url||'?').split('/').pop() + ':' + line + ':' + col);
+        if (err && err.stack) log('STACK: ' + err.stack.substring(0, 500));
+        return false;
+      };
+
+      window.addEventListener('error', function(e) {
+        if (e.target && e.target.tagName === 'SCRIPT') {
+          log('SCRIPT LOAD ERROR: ' + (e.target.src || 'inline'));
+        } else {
+          log('ERROR EVENT: ' + (e.message || e.type || JSON.stringify(e)));
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = e.reason;
+        var msg = reason ? (reason.stack || reason.message || String(reason)) : 'unknown';
+        log('UNHANDLED PROMISE: ' + msg.substring(0, 800));
+      });
+
+      log('Page loaded, about to import app bundle...');
+    </script>
+
+    <script type="module">
+      // Dynamically import the app bundle to catch module-level errors
+      try {
+        log('Starting dynamic import...');
+        await import('/assets/index-BDFUwGlY.js');
+        log('Import completed successfully');
+      } catch(e) {
+        log('IMPORT ERROR: ' + (e.stack || e.message || String(e)));
+      }
+
+      // Check if React rendered
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var rendered = root && root.innerHTML.length > 10;
+        addCheck('React App Mount', rendered, rendered ? 'Rendered ' + root.children.length + ' children' : 'Root empty — ' + (root ? root.innerHTML.length : 0) + ' chars');
+        log('React check: rendered=' + rendered + ', innerHTML length=' + (root ? root.innerHTML.length : 0));
+      }, 5000);
+    </script>
+  </body>
+</html>

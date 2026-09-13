@@ -1,4 +1,4 @@
-# PDLC VSM Platform — Detailed Step-by-Step Demo Guide
+# STUMP — Detailed Step-by-Step Demo Guide
 ## US Bank | Team Phoenix | Payments & Transfers Division
 
 **Purpose:** Complete presenter script for end-to-end platform demo with exact talking tracks, data to enter, and expected outputs for every action.

@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Future State of IT Service Partners — Frontier Professional &amp; ADLC POV</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1a4a7a;
+    --blue-700: #1a56db;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-400: #60a5fa;
+    --blue-300: #93c5fd;
+    --blue-200: #bfdbfe;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-900: #111827;
+    --gray-700: #374151;
+    --gray-600: #4b5563;
+    --gray-500: #6b7280;
+    --gray-400: #9ca3af;
+    --gray-300: #d1d5db;
+    --gray-200: #e5e7eb;
+    --gray-100: #f3f4f6;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .slide-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .slide {
+    width: 1280px;
+    height: 720px;
+    background: var(--white);
+    border-radius: 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: center center;
+  }
+
+  .slide.active { display: flex; }
+
+  /* Scale slides to fit viewport */
+  @media (max-width: 1280px) or (max-height: 720px) {
+    .slide {
+      transform: scale(min(calc(100vw / 1280), calc(100vh / 720)));
+    }
+  }
+
+  /* Slide header bar */
+  .slide-header {
+    background: var(--blue-700);
+    color: var(--white);
+    padding: 20px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    flex-shrink: 0;
+  }
+
+  .slide-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .slide-header .section-tag {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+  }
+
+  /* Slide body */
+  .slide-body {
+    flex: 1;
+    padding: 36px 48px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .slide-body.centered {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  /* Slide footer */
+  .slide-footer {
+    padding: 12px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--gray-400);
+    border-top: 1px solid var(--gray-200);
+    flex-shrink: 0;
+  }
+
+  .slide-footer .page-num {
+    font-weight: 600;
+    color: var(--blue-700);
+  }
+
+  /* Typography */
+  h1 { font-size: 42px; font-weight: 800; line-height: 1.15; letter-spacing: -1px; color: var(--blue-900); }
+  h2 { font-size: 28px; font-weight: 700; line-height: 1.3; color: var(--blue-900); }
+  h3 { font-size: 20px; font-weight: 700; color: var(--blue-800); margin-bottom: 10px; }
+  h4 { font-size: 16px; font-weight: 600; color: var(--blue-700); margin-bottom: 6px; }
+  p { font-size: 15px; line-height: 1.6; color: var(--gray-700); margin-bottom: 12px; }
+  .subtitle { font-size: 18px; color: var(--gray-600); font-weight: 400; line-height: 1.5; }
+  .small { font-size: 13px; color: var(--gray-500); }
+  .tiny { font-size: 11px; color: var(--gray-400); }
+  .highlight { color: var(--blue-700); font-weight: 600; }
+  .accent { color: var(--blue-600); }
+
+  /* Layout helpers */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; flex: 1; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; flex: 1; }
+  .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; flex: 1; }
+  .gap-16 { gap: 16px; }
+
+  /* Cards */
+  .card {
+    background: var(--blue-50);
+    border: 1px solid var(--blue-200);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card.white {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+  }
+  .card.dark {
+    background: var(--blue-900);
+    color: var(--white);
+    border: none;
+  }
+  .card.dark h4, .card.dark h3 { color: var(--blue-200); }
+  .card.dark p, .card.dark li { color: rgba(255,255,255,0.85); }
+  .card.accent-border {
+    border-left: 4px solid var(--blue-600);
+    background: var(--white);
+  }
+
+  /* Lists */
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { font-size: 14px; line-height: 1.6; color: var(--gray-700); margin-bottom: 4px; }
+  li strong { color: var(--blue-800); }
+
+  /* Stat blocks */
+  .stat { text-align: center; padding: 16px; }
+  .stat .num { font-size: 36px; font-weight: 800; color: var(--blue-700); line-height: 1.1; }
+  .stat .label { font-size: 12px; color: var(--gray-500); margin-top: 4px; font-weight: 500; }
+
+  .stat-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 16px 0;
+  }
+  .stat-row .stat {
+    flex: 1;
+    background: var(--blue-50);
+    border-radius: 10px;
+    border: 1px solid var(--blue-100);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table th {
+    background: var(--blue-700);
+    color: var(--white);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--gray-200);
+    color: var(--gray-700);
+    vertical-align: top;
+  }
+  table tr:nth-child(even) { background: var(--blue-50); }
+  table tr:last-child td { border-bottom: none; }
+  table th:first-child { border-radius: 6px 0 0 0; }
+  table th:last-child { border-radius: 0 6px 0 0; }
+
+  /* Quote */
+  .quote {
+    border-left: 4px solid var(--blue-400);
+    padding: 16px 24px;
+    background: var(--blue-50);
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .quote p { font-style: italic; color: var(--blue-800); font-size: 15px; margin-bottom: 4px; }
+  .quote .attr { font-style: normal; font-size: 12px; color: var(--gray-500); font-weight: 500; }
+
+  /* Badge / pill */
+  .pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pill.blue { background: var(--blue-100); color: var(--blue-700); }
+  .pill.dark { background: var(--blue-900); color: var(--white); }
+
+  /* Arrow / flow */
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .flow-arrow .step-box {
+    background: var(--blue-50);
+    border: 1px solid var(--blue-200);
+    border-radius: 8px;
+    padding: 12px 18px;
+    text-align: center;
+    flex: 1;
+  }
+  .flow-arrow .arrow { color: var(--blue-400); font-size: 22px; flex-shrink: 0; }
+
+  /* Progress bar */
+  .bar-chart { margin: 8px 0; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 6px; }
+  .bar-label { width: 110px; font-size: 12px; color: var(--gray-600); font-weight: 500; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 22px; background: var(--gray-100); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; color: var(--white); font-weight: 600; }
+  .bar-fill.blue { background: var(--blue-700); }
+  .bar-fill.light { background: var(--blue-400); }
+  .bar-fill.accent { background: var(--blue-500); }
+
+  /* Title slide special */
+  .title-slide {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 50%, var(--blue-700) 100%);
+    color: var(--white);
+    justify-content: center;
+    padding: 60px 80px;
+  }
+  .title-slide h1 { color: var(--white); font-size: 44px; margin-bottom: 16px; }
+  .title-slide .subtitle { color: var(--blue-200); font-size: 18px; }
+  .title-slide .authors { color: var(--blue-300); font-size: 14px; margin-top: 32px; }
+  .title-slide .divider { width: 80px; height: 3px; background: var(--blue-400); margin: 24px 0; border-radius: 2px; }
+
+  /* Section divider */
+  .section-slide {
+    background: var(--blue-900);
+    color: var(--white);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px;
+  }
+  .section-slide h1 { color: var(--white); font-size: 38px; margin-bottom: 12px; }
+  .section-slide .subtitle { color: var(--blue-300); }
+  .section-slide .section-num {
+    font-size: 64px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+  }
+
+  /* Closing slide */
+  .closing-slide {
+    background: linear-gradient(135deg, var(--blue-800), var(--blue-900));
+    color: var(--white);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px;
+  }
+  .closing-slide h1 { color: var(--white); font-size: 38px; }
+  .closing-slide p { color: var(--blue-200); font-size: 18px; }
+
+  /* Cost comparison visual */
+  .cost-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 100%;
+  }
+  .cost-layer {
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .cost-layer .amt { font-weight: 700; }
+
+  /* Nav */
+  .nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--gray-200);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+  }
+  .nav-bar button {
+    background: var(--blue-700);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .nav-bar button:hover { background: var(--blue-800); }
+  .nav-bar button:disabled { background: var(--gray-300); cursor: not-allowed; }
+  .nav-bar .slide-info {
+    font-size: 13px;
+    color: var(--gray-500);
+    font-weight: 500;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* Print */
+  @media print {
+    .nav-bar { display: none; }
+    .slide-container { height: auto; overflow: visible; }
+    .slide {
+      display: flex !important;
+      position: relative;
+      page-break-after: always;
+      box-shadow: none;
+      margin: 0 auto;
+    }
+  }
+
+  /* Responsive scaling */
+  .slide-wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 52px;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-wrapper">
+<div class="slide-container" id="slideContainer">
+
+<!-- ======================= SLIDE 1: Title ======================= -->
+<div class="slide title-slide active" data-slide="1">
+  <div style="position:absolute;top:32px;right:48px;opacity:0.3">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="38" stroke="#93c5fd" stroke-width="2"/><circle cx="40" cy="40" r="24" stroke="#93c5fd" stroke-width="1.5"/><circle cx="40" cy="40" r="10" fill="#60a5fa" opacity="0.4"/></svg>
+  </div>
+  <span class="pill dark" style="margin-bottom:20px;">POINT OF VIEW</span>
+  <h1>The Future State of<br>IT Service Partners</h1>
+  <div class="divider"></div>
+  <p class="subtitle" style="max-width:700px;">When every professional becomes a Frontier Engineer &mdash; small pods of 1&ndash;3 people, amplified by tireless digital agents, delivering what once took a hundred.</p>
+  <p class="authors">Porkkovan Elangovan &amp; Khirthika V &nbsp;&middot;&nbsp; July 2026 &nbsp;&middot;&nbsp; Confidential</p>
+</div>
+
+<!-- ======================= SLIDE 2: Imagine This ======================= -->
+<div class="slide" data-slide="2">
+  <div class="slide-header">
+    <h2>Imagine This</h2>
+    <span class="section-tag">Vision</span>
+  </div>
+  <div class="slide-body centered" style="padding:40px 64px;">
+    <p style="font-size:22px;line-height:1.7;color:var(--blue-900);max-width:900px;font-weight:400;">
+      Imagine describing the outcome you want &mdash; and a small pod of two or three people, amplified by tireless digital agents, turning it into a <strong>working product</strong> and running it for you.
+    </p>
+    <p style="font-size:22px;line-height:1.7;color:var(--blue-900);max-width:900px;margin-top:8px;">
+      Not in six months. <span class="highlight" style="font-size:28px;">In days.</span>
+    </p>
+    <div style="margin-top:32px;padding:20px 32px;background:var(--blue-50);border-radius:10px;max-width:720px;">
+      <p style="font-size:16px;color:var(--blue-800);margin:0;font-weight:500;">
+        You are not replaced by the machine.<br>
+        <strong style="font-size:18px;">You are promoted above it.</strong>
+      </p>
+    </div>
+    <p class="small" style="margin-top:24px;">This is what the technology services industry looks like when the <strong>AI-Driven Lifecycle (ADLC)</strong> is fully achieved.</p>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">2</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 3: The World We Know ======================= -->
+<div class="slide" data-slide="3">
+  <div class="slide-header">
+    <h2>The World We Know</h2>
+    <span class="section-tag">Current State</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:16px;">Delivering a new capability today &mdash; a loan pre-approval, a claims update &mdash; follows a familiar pattern:</p>
+    <div class="flow-arrow" style="margin-bottom:20px;">
+      <div class="step-box"><strong>BA</strong><br><span class="tiny">Requirements</span></div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box"><strong>Architect</strong><br><span class="tiny">Design</span></div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box"><strong>Dev Team</strong><br><span class="tiny">Build</span></div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box"><strong>QA Team</strong><br><span class="tiny">Test</span></div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box"><strong>Ops</strong><br><span class="tiny">Deploy</span></div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box"><strong>Support</strong><br><span class="tiny">Monitor</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num">50–150</div>
+        <div class="label">People per engagement</div>
+      </div>
+      <div class="stat">
+        <div class="num">3–6 mo</div>
+        <div class="label">Time to delivery</div>
+      </div>
+      <div class="stat">
+        <div class="num">5–12%</div>
+        <div class="label">Productive time</div>
+      </div>
+      <div class="stat">
+        <div class="num">$2.5–4K</div>
+        <div class="label">Cost per unit of work</div>
+      </div>
+    </div>
+    <div class="quote" style="margin-top:12px;">
+      <p>"The client pays for time, not outcomes. And every time you get more efficient, your revenue goes down &mdash; because you are selling hours, not results."</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">3</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 4: The World That Is Coming ======================= -->
+<div class="slide" data-slide="4">
+  <div class="slide-header">
+    <h2>The World That Is Coming</h2>
+    <span class="section-tag">Future State</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:16px;">The same loan pre-approval &mdash; delivered by <strong>a pod of 2 people and 21 digital agents</strong>.</p>
+    <div class="two-col" style="margin-top:8px;">
+      <div>
+        <div class="card" style="margin-bottom:14px;">
+          <h4>Priya &mdash; Product Definer</h4>
+          <p style="font-size:13px;margin:0;">Understands the business problem deeply. Frames the outcome. Directs an agent to draft specs, test scenarios, and user stories. Reviews and refines &mdash; agents do the heavy drafting in minutes.</p>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <h4>Arjun &mdash; Product Builder</h4>
+          <p style="font-size:13px;margin:0;">Directs a fleet of agents to design architecture, generate code, write tests, build pipelines, and ship to production. Reviews, corrects, and makes the calls no machine can: trade-offs, risk, quality.</p>
+        </div>
+        <div class="card">
+          <h4>Meera &mdash; Frontier Principal <span class="tiny">(shared across 4 pods)</span></h4>
+          <p style="font-size:13px;margin:0;">Sets architecture standards, governs quality, steps in for truly novel problems. Designation is earned, not assigned.</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:center;">
+        <div class="card dark" style="text-align:center;padding:28px;">
+          <div style="font-size:56px;font-weight:800;color:var(--blue-300);">3 days</div>
+          <p style="font-size:16px;margin:8px 0 0 0;">Not 3 months. Three days.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;font-weight:800;color:var(--blue-700);">85%</div>
+            <div class="tiny">Work done by agents</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;font-weight:800;color:var(--blue-700);">15%</div>
+            <div class="tiny">Human direction &amp; governance</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">4</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 5: What Is a Frontier Professional? ======================= -->
+<div class="slide" data-slide="5">
+  <div class="slide-header">
+    <h2>What Is a Frontier Professional?</h2>
+    <span class="section-tag">The Role</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:20px;">Anyone, in any role, can grow into a Frontier Professional. A developer, tester, analyst, or someone in finance, HR, or procurement. The path is the same &mdash; only the domain changes.</p>
+    <h3>The Journey &mdash; Four Stages</h3>
+    <div class="four-col" style="margin-top:12px;">
+      <div class="card" style="border-top:4px solid var(--gray-400);">
+        <h4 style="color:var(--gray-500);">Stage 0</h4>
+        <p style="font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Traditional</p>
+        <p style="font-size:12px;margin:0;">Manual work. No agent interaction. Current state for most roles.</p>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-400);">
+        <h4 style="color:var(--blue-400);">Stage 1</h4>
+        <p style="font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Agent-Assisted</p>
+        <p style="font-size:12px;margin:0;">Agents handle routine tasks. Human reviews and approves. First step on the ladder.</p>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-600);">
+        <h4 style="color:var(--blue-600);">Stage 2</h4>
+        <p style="font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Frontier Engineer / Operator</p>
+        <p style="font-size:12px;margin:0;">Directs agent fleets end-to-end. Owns outcomes. Governs by exception.</p>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-900);">
+        <h4 style="color:var(--blue-900);">Stage 3</h4>
+        <p style="font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Frontier Principal</p>
+        <p style="font-size:12px;margin:0;">Mastered both building &amp; operating. Strategic anchor across pods. Earned, not assigned.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:20px;">
+      <div class="card accent-border" style="flex:1;">
+        <h4>Frontier Engineer</h4>
+        <p style="font-size:12px;margin:0;">Builds and deploys AI-native systems</p>
+      </div>
+      <div class="card accent-border" style="flex:1;">
+        <h4>Frontier Operator</h4>
+        <p style="font-size:12px;margin:0;">Runs and governs AI-enabled operations</p>
+      </div>
+      <div class="card accent-border" style="flex:1;border-left-color:var(--blue-900);">
+        <h4>Frontier Principal</h4>
+        <p style="font-size:12px;margin:0;">Master of both &mdash; the rarest, highest-value tier</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">5</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 6: Six Principles ======================= -->
+<div class="slide" data-slide="6">
+  <div class="slide-header">
+    <h2>Six Principles That Anchor the Model</h2>
+    <span class="section-tag">Foundation</span>
+  </div>
+  <div class="slide-body">
+    <div class="three-col" style="margin-top:4px;">
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">01</div>
+        <h4>Interdisciplinary Capability</h4>
+        <p style="font-size:12px;margin:0;">Blend business, design, engineering, and operations in one person. No more "that's not my job."</p>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">02</div>
+        <h4>Direct Linkage to Value</h4>
+        <p style="font-size:12px;margin:0;">Every effort ties to a measurable outcome. If you cannot explain how your work creates value, it shouldn't be done.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">03</div>
+        <h4>Agents as Routine</h4>
+        <p style="font-size:12px;margin:0;">Working alongside agents is as routine as using email. Not an innovation project &mdash; how work gets done.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">04</div>
+        <h4>End-to-End Accountability</h4>
+        <p style="font-size:12px;margin:0;">You own the outcome from problem to running solution. Not your piece of it &mdash; all of it.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">05</div>
+        <h4>The Pod Is the Unit</h4>
+        <p style="font-size:12px;margin:0;">Small 1&ndash;3 person pods, not large handoff chains. The pod is you, multiplied, with agents doing the execution.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-300);margin-bottom:6px;">06</div>
+        <h4>One Unified Experience</h4>
+        <p style="font-size:12px;margin:0;">The client sees one team, one front door. Not a matrix of roles and escalation paths.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">6</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 7: The New Literacy ======================= -->
+<div class="slide" data-slide="7">
+  <div class="slide-header">
+    <h2>The New Literacy</h2>
+    <span class="section-tag">Skills</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:8px;">Unlike every previous technology shift, there is no programming language to learn. The new literacy is more human.</p>
+    <div class="three-col" style="margin-top:16px;">
+      <div class="card" style="display:flex;flex-direction:column;">
+        <div style="font-size:40px;font-weight:800;color:var(--blue-200);margin-bottom:8px;">1</div>
+        <h3 style="color:var(--blue-800);">Understand the Problem</h3>
+        <p style="font-size:13px;flex:1;">The AI models are not the hard part. What's hard is building the bridge from a model to real enterprise value: the workflows, controls, guardrails, trust, context, and institutional knowledge.</p>
+        <div style="background:var(--blue-50);padding:8px 12px;border-radius:6px;margin-top:8px;">
+          <p style="font-size:11px;margin:0;color:var(--blue-700);font-weight:500;">A Frontier Engineer who understands lending will outperform one who doesn't &mdash; no matter how good the agents are.</p>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;">
+        <div style="font-size:40px;font-weight:800;color:var(--blue-200);margin-bottom:8px;">2</div>
+        <h3 style="color:var(--blue-800);">Direct the Agents</h3>
+        <p style="font-size:13px;flex:1;">Prompting is the new management. Just as a good manager gives clear direction, provides context, and sets expectations &mdash; a good Frontier Professional does the same with agents.</p>
+        <div style="background:var(--blue-50);padding:8px 12px;border-radius:6px;margin-top:8px;">
+          <p style="font-size:11px;margin:0;color:var(--blue-700);font-weight:500;">The quality of what agents produce is directly proportional to the quality of direction you give them.</p>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;">
+        <div style="font-size:40px;font-weight:800;color:var(--blue-200);margin-bottom:8px;">3</div>
+        <h3 style="color:var(--blue-800);">Bring Your Judgement</h3>
+        <p style="font-size:13px;flex:1;">The agents do the heavy lifting. What you bring is the judgement to know what "good" looks like, the instinct to spot when the machine is confidently wrong, and the governance to own the outcome.</p>
+        <div style="background:var(--blue-50);padding:8px 12px;border-radius:6px;margin-top:8px;">
+          <p style="font-size:11px;margin:0;color:var(--blue-700);font-weight:500;">That is the real craft.</p>
+        </div>
+      </div>
+    </div>
+    <div class="quote" style="margin-top:16px;">
+      <p>"Being an AI builder is not something we add on top of how we are organised — it is how we are organised."</p>
+      <span class="attr">&mdash; Ravi Kumar S, CEO, Cognizant</span>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">7</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 8: Inside the Pod ======================= -->
+<div class="slide" data-slide="8">
+  <div class="slide-header">
+    <h2>Inside the Pod &mdash; How It Works</h2>
+    <span class="section-tag">Pod Structure</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>The People <span class="pill blue" style="margin-left:8px;">~15% of workforce</span></h3>
+        <div class="card accent-border" style="margin-bottom:10px;">
+          <h4>Product Definer (1 person)</h4>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:12px;">Understands the business problem</li>
+            <li style="font-size:12px;">Sets the "what" and "why"</li>
+            <li style="font-size:12px;">Directs agents to draft specs</li>
+            <li style="font-size:12px;">Owns the customer outcome</li>
+          </ul>
+        </div>
+        <div class="card accent-border" style="margin-bottom:10px;">
+          <h4>Product Builder (1 person)</h4>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:12px;">Directs building, testing &amp; deployment agents</li>
+            <li style="font-size:12px;">Reviews output, clears exceptions</li>
+            <li style="font-size:12px;">Owns quality and operations</li>
+          </ul>
+        </div>
+        <div class="card accent-border">
+          <h4>Frontier Principal (0.2&ndash;0.3 per pod)</h4>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:12px;">Shared across 3&ndash;5 pods</li>
+            <li style="font-size:12px;">Sets standards, governs quality</li>
+            <li style="font-size:12px;">Steps in for novel problems</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h3>The Agents <span class="pill blue" style="margin-left:8px;">~85% of workforce</span></h3>
+        <p style="font-size:12px;margin-bottom:10px;">15&ndash;21 specialised agents per pod, covering the entire lifecycle:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Define</strong><br>Spec Writer, Story Gen</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Architect</strong><br>Design, Pattern Select</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Build</strong><br>CodeGen, Refactor</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Test</strong><br>TestGen, QA Orchestrator</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Security</strong><br>Scan, Compliance</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Deploy</strong><br>CI/CD, Release Notes</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Monitor</strong><br>APM, Feedback</div>
+          <div style="background:var(--blue-50);padding:8px 10px;border-radius:6px;font-size:11px;"><strong style="color:var(--blue-800);">Govern</strong><br>Risk, Compliance, Audit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">8</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 9: Story 1 - Banking ======================= -->
+<div class="slide" data-slide="9">
+  <div class="slide-header">
+    <h2>Story: Instant Loan Pre-Approval (Banking)</h2>
+    <span class="section-tag">Case Study</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>Timeline &mdash; 3 Days</h3>
+        <div style="position:relative;padding-left:20px;border-left:3px solid var(--blue-200);">
+          <div style="margin-bottom:14px;">
+            <div style="position:absolute;left:-8px;width:14px;height:14px;background:var(--blue-600);border-radius:50%;border:2px solid var(--white);"></div>
+            <h4 style="margin-left:8px;">Day 1 Morning</h4>
+            <p style="font-size:12px;margin-left:8px;margin-bottom:0;">Priya frames outcome. Define Agent drafts spec, test scenarios, 12 user stories in &lt;1 hour. Reviews &amp; approves.</p>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="position:absolute;left:-8px;width:14px;height:14px;background:var(--blue-500);border-radius:50%;border:2px solid var(--white);"></div>
+            <h4 style="margin-left:8px;">Day 1 Midday</h4>
+            <p style="font-size:12px;margin-left:8px;margin-bottom:0;">Architecture Agent + CodeGen Agent produce design &amp; first code. Arjun reviews, makes 3 corrections.</p>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="position:absolute;left:-8px;width:14px;height:14px;background:var(--blue-400);border-radius:50%;border:2px solid var(--white);"></div>
+            <h4 style="margin-left:8px;">Day 1 Afternoon</h4>
+            <p style="font-size:12px;margin-left:8px;margin-bottom:0;">TestGen + QA + Performance (10K users) + Security scan. All automated. Two edge cases fixed.</p>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="position:absolute;left:-8px;width:14px;height:14px;background:var(--blue-300);border-radius:50%;border:2px solid var(--white);"></div>
+            <h4 style="margin-left:8px;">Day 2</h4>
+            <p style="font-size:12px;margin-left:8px;margin-bottom:0;">Deploy Agent ships to production. Release notes auto-generated. APM Agent monitors. Green.</p>
+          </div>
+          <div>
+            <div style="position:absolute;left:-8px;width:14px;height:14px;background:var(--blue-700);border-radius:50%;border:2px solid var(--white);"></div>
+            <h4 style="margin-left:8px;">Day 3</h4>
+            <p style="font-size:12px;margin-left:8px;margin-bottom:0;">Customers using the feature. Feedback Agent synthesises usage. Approval rates on target. Done.</p>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <h3>The Numbers</h3>
+        <table>
+          <tr><th>Metric</th><th>Traditional</th><th>Frontier Pod</th></tr>
+          <tr><td><strong>People</strong></td><td>30</td><td style="color:var(--blue-700);font-weight:700;">2</td></tr>
+          <tr><td><strong>Duration</strong></td><td>10 weeks</td><td style="color:var(--blue-700);font-weight:700;">3 days</td></tr>
+          <tr><td><strong>Cost</strong></td><td>$400,000</td><td style="color:var(--blue-700);font-weight:700;">$6,000</td></tr>
+          <tr><td><strong>Test Coverage</strong></td><td>45%</td><td style="color:var(--blue-700);font-weight:700;">95%</td></tr>
+          <tr><td><strong>Security Vulns</strong></td><td>"Next sprint"</td><td style="color:var(--blue-700);font-weight:700;">Zero</td></tr>
+        </table>
+        <div class="card dark" style="text-align:center;padding:20px;">
+          <div style="font-size:36px;font-weight:800;color:var(--blue-300);">67&times;</div>
+          <p style="margin:4px 0 0;font-size:13px;">Cost reduction</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">9</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 10: Story 2 & 3 ======================= -->
+<div class="slide" data-slide="10">
+  <div class="slide-header">
+    <h2>More Stories: Finance &amp; Insurance</h2>
+    <span class="section-tag">Case Studies</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card" style="display:flex;flex-direction:column;">
+        <span class="pill blue" style="align-self:flex-start;margin-bottom:10px;">Finance</span>
+        <h3>Kavitha &mdash; Autonomous Month-End Close</h3>
+        <p style="font-size:13px;">Finance analyst, no coding background. Journey through stages:</p>
+        <div style="margin:8px 0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="background:var(--gray-400);color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">S0</span>
+            <span style="font-size:12px;">Manual: spreadsheets, line-by-line reconciliation, emails</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="background:var(--blue-400);color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">S1</span>
+            <span style="font-size:12px;">Agents pull, normalise, auto-reconcile &amp; draft commentary</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--blue-600);color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">S2</span>
+            <span style="font-size:12px;">Autonomous close. Kavitha governs by exception only.</span>
+          </div>
+        </div>
+        <div style="background:var(--blue-50);padding:10px;border-radius:6px;margin-top:auto;">
+          <p style="font-size:12px;margin:0;"><strong>6 days &rarr; &lt;1 day.</strong> Close time reduced from 6 days to hours. Kavitha is not a technologist &mdash; she learned to direct agents. The ladder is open to everyone.</p>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;">
+        <span class="pill blue" style="align-self:flex-start;margin-bottom:10px;">Insurance</span>
+        <h3>Rajan &mdash; Self-Service Policy Endorsements</h3>
+        <p style="font-size:13px;">Pod builds a self-service policy endorsement flow for an insurance client.</p>
+        <table style="margin:10px 0;">
+          <tr><th>Metric</th><th>Traditional</th><th>Pod</th></tr>
+          <tr><td>People</td><td>20</td><td style="color:var(--blue-700);font-weight:700;">2&ndash;3</td></tr>
+          <tr><td>Duration</td><td>8 weeks</td><td style="color:var(--blue-700);font-weight:700;">5 days</td></tr>
+          <tr><td>Test Coverage</td><td>~50%</td><td style="color:var(--blue-700);font-weight:700;">92%</td></tr>
+          <tr><td>Change Failure</td><td>15&ndash;30%</td><td style="color:var(--blue-700);font-weight:700;">&lt;5%</td></tr>
+        </table>
+        <div style="background:var(--blue-50);padding:10px;border-radius:6px;margin-top:auto;">
+          <p style="font-size:12px;margin:0;"><strong>The client paid for the capability, not for 20 people's time.</strong> Cost was a fraction. Quality was higher. The pod has already moved on.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">10</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 11: Before & After in Numbers ======================= -->
+<div class="slide" data-slide="11">
+  <div class="slide-header">
+    <h2>The Before-and-After &mdash; In Numbers</h2>
+    <span class="section-tag">Impact</span>
+  </div>
+  <div class="slide-body">
+    <table style="margin-bottom:16px;">
+      <tr>
+        <th style="width:28%;">Metric</th>
+        <th style="width:28%;">Traditional SDLC</th>
+        <th style="width:28%;">ADLC Frontier Pod</th>
+        <th style="width:16%;">Change</th>
+      </tr>
+      <tr><td><strong>Team Size</strong></td><td>50&ndash;150 people</td><td>2&ndash;3 people + 21 agents</td><td style="color:var(--blue-700);font-weight:700;">30&ndash;50&times; leverage</td></tr>
+      <tr><td><strong>Delivery Time</strong></td><td>3&ndash;6 months</td><td>3&ndash;5 days</td><td style="color:var(--blue-700);font-weight:700;">20&ndash;40&times; faster</td></tr>
+      <tr><td><strong>Cost per Capability</strong></td><td>$300K&ndash;$600K</td><td>$5K&ndash;$15K</td><td style="color:var(--blue-700);font-weight:700;">60&ndash;70% reduction</td></tr>
+      <tr><td><strong>Test Coverage</strong></td><td>40&ndash;55%</td><td>90&ndash;95%+</td><td style="color:var(--blue-700);font-weight:700;">2&times; improvement</td></tr>
+      <tr><td><strong>Change Failure Rate</strong></td><td>15&ndash;30%</td><td>&lt;5%</td><td style="color:var(--blue-700);font-weight:700;">3&ndash;6&times; better</td></tr>
+      <tr><td><strong>Productive Time</strong></td><td>5&ndash;12%</td><td>60&ndash;80%</td><td style="color:var(--blue-700);font-weight:700;">6&ndash;15&times; improvement</td></tr>
+      <tr><td><strong>Revenue per Person</strong></td><td>$16K/month</td><td>$70K/month</td><td style="color:var(--blue-700);font-weight:700;">4.4&times; increase</td></tr>
+      <tr><td><strong>Security at Release</strong></td><td>Critical findings common</td><td>Zero critical findings</td><td style="color:var(--blue-700);font-weight:700;">Clean release</td></tr>
+    </table>
+    <div class="quote">
+      <p>"The shift from vendor to partner — a word that has been overused but, in the Frontier model, finally earns its meaning."</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">11</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 12: Business Model Shifts ======================= -->
+<div class="slide" data-slide="12">
+  <div class="slide-header">
+    <h2>What This Means for Service Partners</h2>
+    <span class="section-tag">Business Model</span>
+  </div>
+  <div class="slide-body">
+    <div class="three-col">
+      <div class="card" style="display:flex;flex-direction:column;">
+        <h3>Business Model Shifts</h3>
+        <p style="font-size:13px;">From selling <strong>time</strong> to selling <strong>outcomes</strong>.</p>
+        <div style="margin:12px 0;flex:1;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <div style="text-align:center;">
+              <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Traditional</div>
+              <div style="font-size:20px;font-weight:700;color:var(--gray-600);">$16K</div>
+              <div style="font-size:10px;color:var(--gray-400);">per person/month</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:24px;color:var(--blue-400);">&rarr;</div>
+            <div style="text-align:center;">
+              <div style="font-size:11px;color:var(--blue-600);margin-bottom:4px;">Frontier</div>
+              <div style="font-size:20px;font-weight:700;color:var(--blue-700);">$70K</div>
+              <div style="font-size:10px;color:var(--blue-400);">per person/month</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:12px;margin:0;color:var(--gray-600);">Efficiency improvements <strong>increase margin</strong> instead of reducing revenue.</p>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;">
+        <h3>Talent Model Shifts</h3>
+        <p style="font-size:13px;">From <strong>pyramid</strong> (many juniors) to <strong>diamond</strong> (all Frontier).</p>
+        <div style="margin:12px 0;flex:1;display:flex;align-items:center;justify-content:center;gap:24px;">
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--gray-500);margin-bottom:4px;">Pyramid</div>
+            <svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,5 5,55 55,55" fill="var(--gray-300)" stroke="var(--gray-400)" stroke-width="1"/></svg>
+          </div>
+          <div style="font-size:24px;color:var(--blue-400);">&rarr;</div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--blue-600);margin-bottom:4px;">Diamond</div>
+            <svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,5 55,30 30,55 5,30" fill="var(--blue-100)" stroke="var(--blue-400)" stroke-width="1.5"/></svg>
+          </div>
+        </div>
+        <p style="font-size:12px;margin:0;color:var(--gray-600);">Volume work done by agents. Humans provide <strong>direction, judgement &amp; governance</strong>.</p>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;">
+        <h3>Client Relationship</h3>
+        <p style="font-size:13px;">From <strong>headcount vendor</strong> to <strong>outcome partner</strong>.</p>
+        <div style="margin:12px 0;flex:1;">
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--gray-500);margin-bottom:2px;">Before</div>
+            <p style="font-size:12px;margin:0;">Extended headcount provider. Transactional. Pay by month.</p>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--blue-600);margin-bottom:2px;">After</div>
+            <p style="font-size:12px;margin:0;">One pod, one front door. Accountable for outcomes. Pay for what you get.</p>
+          </div>
+        </div>
+        <p style="font-size:12px;margin:0;color:var(--gray-600);">Client costs drop <strong>60&ndash;70%</strong> while quality increases.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">12</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 13: At Scale ======================= -->
+<div class="slide" data-slide="13">
+  <div class="slide-header">
+    <h2>At Scale &mdash; 100 Pods</h2>
+    <span class="section-tag">Economics</span>
+  </div>
+  <div class="slide-body">
+    <div class="stat-row" style="margin-bottom:20px;">
+      <div class="stat">
+        <div class="num">250</div>
+        <div class="label">Frontier Engineers</div>
+      </div>
+      <div class="stat">
+        <div class="num">2,100</div>
+        <div class="label">Agents</div>
+      </div>
+      <div class="stat">
+        <div class="num">$17.5M</div>
+        <div class="label">Monthly Revenue</div>
+      </div>
+      <div class="stat">
+        <div class="num">$210M</div>
+        <div class="label">Annual Revenue</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <h3>Traditional Equivalent</h3>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Traditional</span>
+            <div class="bar-track"><div class="bar-fill blue" style="width:100%;">8,000&ndash;13,000 people</div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Frontier</span>
+            <div class="bar-track"><div class="bar-fill accent" style="width:3%;">250</div></div>
+          </div>
+        </div>
+        <p style="font-size:13px;margin-top:12px;">Same output, <strong>30&ndash;50&times; leverage ratio</strong>.</p>
+      </div>
+      <div>
+        <h3>Revenue per Person</h3>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Traditional</span>
+            <div class="bar-track"><div class="bar-fill blue" style="width:23%;">$192K/yr</div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Frontier</span>
+            <div class="bar-track"><div class="bar-fill accent" style="width:100%;">$840K/yr</div></div>
+          </div>
+        </div>
+        <p style="font-size:13px;margin-top:12px;"><strong>4.4&times; improvement</strong> in the most important services metric.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;background:var(--blue-50);">
+      <p style="font-size:13px;margin:0;"><strong>The Flywheel:</strong> Every pod run generates data &rarr; improves agents &rarr; less human intervention &rarr; more pods per person &rarr; more data. The cycle compounds.</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">13</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 14: What Changes for Everyone ======================= -->
+<div class="slide" data-slide="14">
+  <div class="slide-header">
+    <h2>What Changes for Everyone</h2>
+    <span class="section-tag">Impact</span>
+  </div>
+  <div class="slide-body">
+    <div class="three-col" style="margin-top:8px;">
+      <div class="card dark" style="display:flex;flex-direction:column;">
+        <h3 style="margin-bottom:12px;">For the Professional</h3>
+        <ul style="padding-left:16px;">
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Influence no longer capped by your own hours</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Multiplied by how well you direct agents and a pod</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Step-change in leverage</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;">Richer, more durable career</li>
+        </ul>
+      </div>
+      <div class="card dark" style="display:flex;flex-direction:column;">
+        <h3 style="margin-bottom:12px;">For the Organisation</h3>
+        <ul style="padding-left:16px;">
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Revenue per person grows 4.4&times;</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Margin improves from ~20% to 45%+</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Fewer people, each far more valuable</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;">Compounding flywheel effect</li>
+        </ul>
+      </div>
+      <div class="card dark" style="display:flex;flex-direction:column;">
+        <h3 style="margin-bottom:12px;">For the Client</h3>
+        <ul style="padding-left:16px;">
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">60&ndash;70% cost reduction</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">20&ndash;40&times; faster delivery</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;margin-bottom:8px;">Higher quality (95% test coverage)</li>
+          <li style="color:rgba(255,255,255,0.85);font-size:13px;">One team, one outcome, one front door</li>
+        </ul>
+      </div>
+    </div>
+    <div class="quote" style="margin-top:24px;">
+      <p>"As a systems integrator, we either become an AI builder or become history. A technology partner's success is simply the sum of its people's: if each of us makes the shift, the organisation thrives."</p>
+      <span class="attr">&mdash; From "Becoming a Frontier Professional"</span>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">14</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 15: Roadmap ======================= -->
+<div class="slide" data-slide="15">
+  <div class="slide-header">
+    <h2>What To Do Next &mdash; Three Horizons</h2>
+    <span class="section-tag">Roadmap</span>
+  </div>
+  <div class="slide-body">
+    <div class="three-col">
+      <div class="card" style="border-top:4px solid var(--blue-400);display:flex;flex-direction:column;">
+        <span class="pill blue" style="align-self:flex-start;margin-bottom:8px;">NOW &middot; Q1&ndash;Q2</span>
+        <h3>Build the Foundation</h3>
+        <ol style="font-size:12px;padding-left:18px;flex:1;">
+          <li style="margin-bottom:6px;"><strong>Start the Academy</strong> &mdash; Train first 500 professionals. Each picks one task and hands it to an agent (Stage 1).</li>
+          <li style="margin-bottom:6px;"><strong>Assess Yourself First</strong> &mdash; Use STUMP to map your delivery process. Baseline metrics. Credibility: "We transformed ourselves first."</li>
+          <li style="margin-bottom:6px;"><strong>Build Agent Library</strong> &mdash; Reusable agents as a shared capability. Not per-project &mdash; a library of specialists.</li>
+          <li><strong>Run 3&ndash;5 Pilot Pods</strong> &mdash; Hybrid stage (50% automation). Generate proof points and stories.</li>
+        </ol>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-600);display:flex;flex-direction:column;">
+        <span class="pill blue" style="align-self:flex-start;margin-bottom:8px;">NEXT &middot; Q3&ndash;Q4</span>
+        <h3>Scale the Model</h3>
+        <ol start="5" style="font-size:12px;padding-left:18px;flex:1;">
+          <li style="margin-bottom:6px;"><strong>Graduate 100 Frontier Engineers</strong> &mdash; Stage 1 &rarr; Stage 2. Each owns a pod end-to-end. 10&times; capacity with 1/10th headcount.</li>
+          <li style="margin-bottom:6px;"><strong>Launch Outcome-Based Pricing</strong> &mdash; Price per capability, not per person-day. Margins: 20% &rarr; 45%+. Client costs drop 60&ndash;70%.</li>
+          <li style="margin-bottom:6px;"><strong>Package as a Service</strong> &mdash; Assess &rarr; Transform &rarr; Operate in 90 days. Repeatable GTM across industries.</li>
+          <li><strong>Build Governance Layer</strong> &mdash; Compliance, model risk, agent oversight. Unlocks regulated industries.</li>
+        </ol>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-900);display:flex;flex-direction:column;">
+        <span class="pill dark" style="align-self:flex-start;margin-bottom:8px;">FUTURE &middot; Year 2+</span>
+        <h3>Reinvent the Industry</h3>
+        <ol start="9" style="font-size:12px;padding-left:18px;flex:1;">
+          <li style="margin-bottom:6px;"><strong>Certify Frontier Principals</strong> &mdash; Rarest, highest-value talent tier. Strategic anchors across pod fleet.</li>
+          <li style="margin-bottom:6px;"><strong>Scale to 100+ Pods</strong> &mdash; 250 engineers, 2,100 agents, $210M annual revenue. Revenue/person grows 4&ndash;5&times;.</li>
+          <li style="margin-bottom:6px;"><strong>Industry Pod Templates</strong> &mdash; Pre-configured agent fleets: banking, insurance, telecom. Pod-as-a-product.</li>
+          <li><strong>Continuous Improvement Flywheel</strong> &mdash; Data &rarr; better agents &rarr; less intervention &rarr; more pods. The cycle compounds.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">15</span>
+  </div>
+</div>
+
+<!-- ======================= SECTION DIVIDER: Cost View ======================= -->
+<div class="slide section-slide" data-slide="16">
+  <div class="section-num">$</div>
+  <h1>Cost View</h1>
+  <p class="subtitle">SDLC vs ADLC vs Transformation Costs<br>Per Pod / Product Team Level</p>
+</div>
+
+<!-- ======================= SLIDE 17: Cost Overview ======================= -->
+<div class="slide" data-slide="17">
+  <div class="slide-header">
+    <h2>Cost View &mdash; Three Perspectives</h2>
+    <span class="section-tag">Cost Analysis</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:16px;">Understanding the full cost picture requires examining three distinct views at the <strong>per-pod / product team</strong> level.</p>
+    <div class="three-col" style="margin-top:8px;">
+      <div class="card" style="border-top:4px solid var(--gray-400);text-align:center;">
+        <div style="font-size:40px;font-weight:800;color:var(--gray-300);margin-bottom:8px;">1</div>
+        <h3 style="color:var(--gray-700);">SDLC Cost</h3>
+        <p style="font-size:20px;font-weight:700;color:var(--gray-700);margin:12px 0;">$85K&ndash;$125K</p>
+        <p style="font-size:11px;color:var(--gray-500);margin:0;">per month / per product team</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--gray-600);text-align:left;">
+          Full human team: 8&ndash;15 roles, traditional tools, established process. High labour cost, low automation.
+        </div>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-600);text-align:center;">
+        <div style="font-size:40px;font-weight:800;color:var(--blue-200);margin-bottom:8px;">2</div>
+        <h3 style="color:var(--blue-700);">ADLC Cost</h3>
+        <p style="font-size:20px;font-weight:700;color:var(--blue-700);margin:12px 0;">$18K&ndash;$28K</p>
+        <p style="font-size:11px;color:var(--blue-400);margin:0;">per month / per pod</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--gray-600);text-align:left;">
+          2&ndash;3 Frontier Professionals + 15&ndash;21 agents. High automation, low human cost, token &amp; compute spend.
+        </div>
+      </div>
+      <div class="card" style="border-top:4px solid var(--blue-900);text-align:center;">
+        <div style="font-size:40px;font-weight:800;color:var(--blue-100);margin-bottom:8px;">3</div>
+        <h3 style="color:var(--blue-900);">Transform Cost</h3>
+        <p style="font-size:20px;font-weight:700;color:var(--blue-900);margin:12px 0;">$120K&ndash;$200K</p>
+        <p style="font-size:11px;color:var(--gray-500);margin:0;">one-time / per pod setup</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--gray-600);text-align:left;">
+          Training, agent development, infrastructure setup, process redesign. One-time investment per pod; pays back in 2&ndash;4 months.
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background:var(--blue-50);margin-top:16px;text-align:center;">
+      <p style="font-size:14px;margin:0;"><strong>Net savings after transformation:</strong> $55K&ndash;$97K per month per pod &nbsp;&middot;&nbsp; <strong>Payback period:</strong> 2&ndash;4 months</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">17</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 18: SDLC Cost Breakdown ======================= -->
+<div class="slide" data-slide="18">
+  <div class="slide-header" style="background:var(--gray-600);">
+    <h2>SDLC Cost Breakdown &mdash; Full Human Team</h2>
+    <span class="section-tag">Per Product Team / Month</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>Human Resources <span style="float:right;color:var(--gray-600);font-size:14px;font-weight:700;">$72K&ndash;$105K</span></h3>
+        <table style="margin-bottom:12px;">
+          <tr><th>Role</th><th>Count</th><th>Cost/mo</th></tr>
+          <tr><td>Business Analyst</td><td>1&ndash;2</td><td>$7K&ndash;$14K</td></tr>
+          <tr><td>Solution Architect</td><td>1</td><td>$12K&ndash;$15K</td></tr>
+          <tr><td>Developers (Frontend + Backend)</td><td>3&ndash;5</td><td>$24K&ndash;$40K</td></tr>
+          <tr><td>QA / Test Engineers</td><td>2&ndash;3</td><td>$12K&ndash;$18K</td></tr>
+          <tr><td>DevOps Engineer</td><td>1</td><td>$8K&ndash;$10K</td></tr>
+          <tr><td>Project Manager / Scrum Master</td><td>1</td><td>$9K&ndash;$12K</td></tr>
+        </table>
+        <h3>Tools &amp; Licences <span style="float:right;color:var(--gray-600);font-size:14px;font-weight:700;">$8K&ndash;$12K</span></h3>
+        <table>
+          <tr><th>Item</th><th>Cost/mo</th></tr>
+          <tr><td>IDE licences (per seat)</td><td>$1K&ndash;$2K</td></tr>
+          <tr><td>CI/CD tooling (Jenkins/Azure DevOps)</td><td>$1.5K&ndash;$2.5K</td></tr>
+          <tr><td>JIRA / Confluence / Collaboration</td><td>$0.8K&ndash;$1.5K</td></tr>
+          <tr><td>Cloud infra (dev/test/staging)</td><td>$3K&ndash;$4K</td></tr>
+          <tr><td>Security / SAST tools</td><td>$1K&ndash;$2K</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Other Costs <span style="float:right;color:var(--gray-600);font-size:14px;font-weight:700;">$5K&ndash;$8K</span></h3>
+        <table style="margin-bottom:16px;">
+          <tr><th>Item</th><th>Cost/mo</th></tr>
+          <tr><td>Coordination overhead (meetings, handoffs)</td><td>$2K&ndash;$3K</td></tr>
+          <tr><td>Environment management</td><td>$1K&ndash;$2K</td></tr>
+          <tr><td>Documentation &amp; compliance</td><td>$1K&ndash;$1.5K</td></tr>
+          <tr><td>Training &amp; onboarding (amortised)</td><td>$1K&ndash;$1.5K</td></tr>
+        </table>
+        <div class="card dark" style="margin-top:16px;">
+          <h3 style="text-align:center;">Total SDLC</h3>
+          <div style="text-align:center;font-size:42px;font-weight:800;color:var(--blue-300);margin:8px 0;">$85K&ndash;$125K</div>
+          <p style="text-align:center;font-size:12px;margin:0;">per product team / per month</p>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-200);">8&ndash;12 people</span>
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-200);">~85% labour</span>
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-200);">5&ndash;12% productive</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">18</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 19: ADLC Cost Breakdown ======================= -->
+<div class="slide" data-slide="19">
+  <div class="slide-header">
+    <h2>ADLC Cost Breakdown &mdash; Agent-Driven Pod</h2>
+    <span class="section-tag">Per Pod / Month</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>Human Resources <span style="float:right;color:var(--blue-700);font-size:14px;font-weight:700;">$8K&ndash;$12K</span></h3>
+        <table style="margin-bottom:12px;">
+          <tr><th>Role</th><th>Count</th><th>Cost/mo</th></tr>
+          <tr><td>Product Definer</td><td>1</td><td>$3.5K&ndash;$5K</td></tr>
+          <tr><td>Product Builder</td><td>1</td><td>$3.5K&ndash;$5K</td></tr>
+          <tr><td>Frontier Principal (shared 0.25 FTE)</td><td>0.25</td><td>$1K&ndash;$2K</td></tr>
+        </table>
+        <h3>AI / Agent Infrastructure <span style="float:right;color:var(--blue-700);font-size:14px;font-weight:700;">$4K&ndash;$7K</span></h3>
+        <table style="margin-bottom:12px;">
+          <tr><th>Item</th><th>Cost/mo</th></tr>
+          <tr><td>LLM API tokens (GPT-4 / Claude / Gemini)</td><td>$1.5K&ndash;$3K</td></tr>
+          <tr><td>Agent compute (hosting, orchestration)</td><td>$1K&ndash;$1.5K</td></tr>
+          <tr><td>Embedding &amp; vector DB</td><td>$0.3K&ndash;$0.5K</td></tr>
+          <tr><td>Agent monitoring &amp; logging</td><td>$0.2K&ndash;$0.5K</td></tr>
+          <tr><td>Model fine-tuning (amortised)</td><td>$0.5K&ndash;$1K</td></tr>
+          <tr><td>Guardrails &amp; safety layer</td><td>$0.2K&ndash;$0.5K</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Tools &amp; Licences <span style="float:right;color:var(--blue-700);font-size:14px;font-weight:700;">$3.5K&ndash;$5K</span></h3>
+        <table style="margin-bottom:12px;">
+          <tr><th>Item</th><th>Cost/mo</th></tr>
+          <tr><td>AI-native IDE (Cursor, Claude Code)</td><td>$0.3K&ndash;$0.5K</td></tr>
+          <tr><td>CI/CD + automated pipelines</td><td>$1K&ndash;$1.5K</td></tr>
+          <tr><td>Cloud infra (prod-grade, auto-scaled)</td><td>$1.5K&ndash;$2K</td></tr>
+          <tr><td>Observability (APM, traces)</td><td>$0.5K&ndash;$0.8K</td></tr>
+          <tr><td>Security scanning (automated)</td><td>$0.2K&ndash;$0.2K</td></tr>
+        </table>
+        <h3>Other <span style="float:right;color:var(--blue-700);font-size:14px;font-weight:700;">$2.5K&ndash;$4K</span></h3>
+        <table style="margin-bottom:10px;">
+          <tr><th>Item</th><th>Cost/mo</th></tr>
+          <tr><td>Agent governance &amp; compliance</td><td>$0.5K&ndash;$1K</td></tr>
+          <tr><td>Knowledge base maintenance</td><td>$0.5K&ndash;$0.8K</td></tr>
+          <tr><td>Continuous learning / upskilling</td><td>$0.5K&ndash;$1K</td></tr>
+          <tr><td>Pod coordination (minimal overhead)</td><td>$0.5K&ndash;$0.7K</td></tr>
+          <tr><td>Contingency / escalation</td><td>$0.5K&ndash;$0.5K</td></tr>
+        </table>
+        <div class="card" style="background:var(--blue-700);text-align:center;padding:14px;">
+          <h4 style="color:var(--blue-200);margin-bottom:4px;">Total ADLC</h4>
+          <div style="font-size:36px;font-weight:800;color:var(--white);">$18K&ndash;$28K</div>
+          <p style="font-size:11px;color:var(--blue-200);margin:4px 0 0;">per pod / per month</p>
+          <div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-100);">2.25 people</span>
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-100);">21 agents</span>
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:var(--blue-100);">~45% labour</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">19</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 20: Transformation Cost ======================= -->
+<div class="slide" data-slide="20">
+  <div class="slide-header" style="background:var(--blue-900);">
+    <h2>Transformation Cost: SDLC &rarr; ADLC</h2>
+    <span class="section-tag">Per Pod / One-Time</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:12px;">One-time investment to transform a single product team from traditional SDLC to an ADLC Frontier Pod.</p>
+    <div class="two-col">
+      <div>
+        <table>
+          <tr><th>Category</th><th>Items</th><th>Cost</th></tr>
+          <tr>
+            <td><strong>People &amp; Training</strong></td>
+            <td style="font-size:11px;">Frontier Academy enrolment (2&ndash;3 people), hands-on agent training, certification, domain immersion</td>
+            <td style="white-space:nowrap;font-weight:700;">$25K&ndash;$40K</td>
+          </tr>
+          <tr>
+            <td><strong>Agent Development</strong></td>
+            <td style="font-size:11px;">Build/configure 15&ndash;21 specialised agents, prompt engineering, test harnesses, integration testing</td>
+            <td style="white-space:nowrap;font-weight:700;">$35K&ndash;$55K</td>
+          </tr>
+          <tr>
+            <td><strong>Infrastructure Setup</strong></td>
+            <td style="font-size:11px;">Agent orchestration platform, vector DB, LLM gateway, CI/CD pipelines, observability stack</td>
+            <td style="white-space:nowrap;font-weight:700;">$20K&ndash;$30K</td>
+          </tr>
+          <tr>
+            <td><strong>Process Redesign</strong></td>
+            <td style="font-size:11px;">Value stream mapping, workflow automation, governance model, RACI redefinition, quality gates</td>
+            <td style="white-space:nowrap;font-weight:700;">$15K&ndash;$25K</td>
+          </tr>
+          <tr>
+            <td><strong>Knowledge Transfer</strong></td>
+            <td style="font-size:11px;">Domain knowledge capture, RAG pipeline setup, context embedding, institutional memory digitisation</td>
+            <td style="white-space:nowrap;font-weight:700;">$10K&ndash;$20K</td>
+          </tr>
+          <tr>
+            <td><strong>Pilot &amp; Validation</strong></td>
+            <td style="font-size:11px;">2&ndash;4 week pilot run, parallel operation with SDLC team, metrics comparison, go/no-go gate</td>
+            <td style="white-space:nowrap;font-weight:700;">$10K&ndash;$20K</td>
+          </tr>
+          <tr>
+            <td><strong>Change Management</strong></td>
+            <td style="font-size:11px;">Stakeholder alignment, role transition support, client communication, org-change facilitation</td>
+            <td style="white-space:nowrap;font-weight:700;">$5K&ndash;$10K</td>
+          </tr>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card dark" style="text-align:center;padding:20px;">
+          <h4 style="color:var(--blue-200);">Total Transformation</h4>
+          <div style="font-size:40px;font-weight:800;color:var(--white);margin:8px 0;">$120K&ndash;$200K</div>
+          <p style="font-size:12px;color:var(--blue-200);margin:0;">one-time per pod</p>
+        </div>
+        <div class="card" style="text-align:center;">
+          <h4>Payback Period</h4>
+          <div style="font-size:32px;font-weight:800;color:var(--blue-700);margin:4px 0;">2&ndash;4 months</div>
+          <p style="font-size:12px;margin:0;">Monthly savings of $55K&ndash;$97K offset the one-time investment.</p>
+        </div>
+        <div class="card" style="background:var(--blue-50);">
+          <h4>Economies of Scale</h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li><strong>2nd pod:</strong> ~30% cheaper (shared agents)</li>
+            <li><strong>5th pod:</strong> ~50% cheaper (reusable templates)</li>
+            <li><strong>10th pod:</strong> ~60% cheaper (mature platform)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">20</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 21: Cost Comparison Summary ======================= -->
+<div class="slide" data-slide="21">
+  <div class="slide-header">
+    <h2>Cost Comparison Summary</h2>
+    <span class="section-tag">Side by Side</span>
+  </div>
+  <div class="slide-body">
+    <table style="margin-bottom:16px;">
+      <tr>
+        <th style="width:22%;">Cost Category</th>
+        <th style="width:20%;">SDLC (Monthly)</th>
+        <th style="width:20%;">ADLC (Monthly)</th>
+        <th style="width:20%;">Transform (One-Time)</th>
+        <th style="width:18%;">Shift</th>
+      </tr>
+      <tr>
+        <td><strong>Human / Labour</strong></td>
+        <td>$72K&ndash;$105K</td>
+        <td style="color:var(--blue-700);font-weight:600;">$8K&ndash;$12K</td>
+        <td>$25K&ndash;$40K</td>
+        <td style="color:var(--blue-700);font-weight:700;">&darr; 85&ndash;90%</td>
+      </tr>
+      <tr>
+        <td><strong>AI / Tokens / Compute</strong></td>
+        <td>$0</td>
+        <td style="color:var(--blue-700);font-weight:600;">$4K&ndash;$7K</td>
+        <td>$35K&ndash;$55K</td>
+        <td style="color:var(--blue-700);">New cost centre</td>
+      </tr>
+      <tr>
+        <td><strong>Tools &amp; Licences</strong></td>
+        <td>$8K&ndash;$12K</td>
+        <td style="color:var(--blue-700);font-weight:600;">$3.5K&ndash;$5K</td>
+        <td>$20K&ndash;$30K</td>
+        <td style="color:var(--blue-700);font-weight:700;">&darr; 50&ndash;60%</td>
+      </tr>
+      <tr>
+        <td><strong>Process / Overhead</strong></td>
+        <td>$5K&ndash;$8K</td>
+        <td style="color:var(--blue-700);font-weight:600;">$2.5K&ndash;$4K</td>
+        <td>$40K&ndash;$75K</td>
+        <td style="color:var(--blue-700);font-weight:700;">&darr; 50%</td>
+      </tr>
+      <tr style="background:var(--blue-50);font-weight:700;">
+        <td><strong>TOTAL</strong></td>
+        <td>$85K&ndash;$125K</td>
+        <td style="color:var(--blue-700);">$18K&ndash;$28K</td>
+        <td style="color:var(--blue-900);">$120K&ndash;$200K</td>
+        <td style="color:var(--blue-700);">&darr; 70&ndash;78%</td>
+      </tr>
+    </table>
+    <div class="three-col">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Monthly Savings</div>
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);">$55K&ndash;$97K</div>
+        <div style="font-size:11px;color:var(--gray-500);">per pod</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Year 1 Net Savings</div>
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);">$540K&ndash;$960K</div>
+        <div style="font-size:11px;color:var(--gray-500);">per pod (after transform)</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Cost per Capability</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--gray-500);text-decoration:line-through;">$300K&ndash;$600K</div>
+            <div style="font-size:10px;color:var(--gray-400);">SDLC</div>
+          </div>
+          <span style="color:var(--blue-400);font-size:18px;">&rarr;</span>
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--blue-700);">$5K&ndash;$15K</div>
+            <div style="font-size:10px;color:var(--blue-400);">ADLC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">21</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 22: Token & Compute Deep Dive ======================= -->
+<div class="slide" data-slide="22">
+  <div class="slide-header">
+    <h2>Token &amp; Compute Cost Deep Dive</h2>
+    <span class="section-tag">ADLC Detail</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:12px;">The new cost centre in ADLC: AI tokens and agent compute. Here's how it breaks down per pod per month.</p>
+    <div class="two-col">
+      <div>
+        <h3>Token Usage by Agent Category</h3>
+        <table>
+          <tr><th>Agent Category</th><th>Monthly Tokens</th><th>Est. Cost</th></tr>
+          <tr><td>Define Agents (spec, stories)</td><td>~8M tokens</td><td>$200&ndash;$350</td></tr>
+          <tr><td>Architecture Agent</td><td>~5M tokens</td><td>$150&ndash;$250</td></tr>
+          <tr><td>CodeGen Agents</td><td>~25M tokens</td><td>$500&ndash;$900</td></tr>
+          <tr><td>Test Agents (gen + run)</td><td>~15M tokens</td><td>$300&ndash;$550</td></tr>
+          <tr><td>Security &amp; Compliance</td><td>~4M tokens</td><td>$100&ndash;$200</td></tr>
+          <tr><td>Deploy &amp; Release</td><td>~3M tokens</td><td>$80&ndash;$150</td></tr>
+          <tr><td>Monitor &amp; Feedback</td><td>~5M tokens</td><td>$120&ndash;$250</td></tr>
+          <tr><td>Governance &amp; Audit</td><td>~3M tokens</td><td>$80&ndash;$150</td></tr>
+          <tr style="background:var(--blue-50);font-weight:700;">
+            <td><strong>Total</strong></td>
+            <td><strong>~68M tokens</strong></td>
+            <td><strong>$1.5K&ndash;$3K</strong></td>
+          </tr>
+        </table>
+      </div>
+      <div>
+        <h3>Compute &amp; Infrastructure</h3>
+        <table style="margin-bottom:12px;">
+          <tr><th>Item</th><th>Est. Cost/mo</th></tr>
+          <tr><td>Agent orchestration (LangGraph / custom)</td><td>$400&ndash;$600</td></tr>
+          <tr><td>Vector DB (embeddings, RAG)</td><td>$200&ndash;$400</td></tr>
+          <tr><td>Agent execution compute (GPU/CPU)</td><td>$300&ndash;$500</td></tr>
+          <tr><td>Logging, tracing, observability</td><td>$150&ndash;$300</td></tr>
+          <tr><td>Fine-tuning cycles (amortised)</td><td>$400&ndash;$800</td></tr>
+          <tr><td>Safety &amp; guardrails infrastructure</td><td>$100&ndash;$200</td></tr>
+        </table>
+        <div class="card" style="background:var(--blue-50);">
+          <h4>Cost Optimisation Levers</h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li>Prompt caching &mdash; reduce repeat token usage by 40&ndash;60%</li>
+            <li>Model tiering &mdash; use smaller models for routine tasks</li>
+            <li>Batch processing &mdash; reduce per-request overhead</li>
+            <li>Fine-tuning &mdash; fewer tokens per completion over time</li>
+            <li>Agent reuse &mdash; shared agents across pods</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">22</span>
+  </div>
+</div>
+
+<!-- ======================= SECTION DIVIDER: Value Realization ======================= -->
+<div class="slide section-slide" data-slide="23">
+  <div class="section-num">&varr;</div>
+  <h1>Value Realization Framework</h1>
+  <p class="subtitle">Measure, Report &amp; Improve<br>Cost, Productivity &amp; Time to Market</p>
+</div>
+
+<!-- ======================= SLIDE 24: Value Realization Overview ======================= -->
+<div class="slide" data-slide="24">
+  <div class="slide-header">
+    <h2>Value Realization Framework &mdash; Overview</h2>
+    <span class="section-tag">Framework</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:16px;">A structured approach to <strong>measure, report, and continuously improve</strong> the outcomes of the SDLC &rarr; ADLC transformation.</p>
+    <div class="flow-arrow" style="margin-bottom:24px;">
+      <div class="step-box" style="background:var(--blue-700);color:white;border-color:var(--blue-700);">
+        <strong style="color:white;">MEASURE</strong><br>
+        <span style="font-size:10px;color:var(--blue-200);">KPIs &amp; Metrics</span>
+      </div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box" style="background:var(--blue-600);color:white;border-color:var(--blue-600);">
+        <strong style="color:white;">REPORT</strong><br>
+        <span style="font-size:10px;color:var(--blue-200);">Dashboards &amp; Reviews</span>
+      </div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box" style="background:var(--blue-500);color:white;border-color:var(--blue-500);">
+        <strong style="color:white;">IMPROVE</strong><br>
+        <span style="font-size:10px;color:var(--blue-200);">Optimise &amp; Scale</span>
+      </div>
+      <span class="arrow">&rarr;</span>
+      <div class="step-box" style="background:var(--blue-900);color:white;border-color:var(--blue-900);">
+        <strong style="color:white;">COMPOUND</strong><br>
+        <span style="font-size:10px;color:var(--blue-200);">Flywheel Effect</span>
+      </div>
+    </div>
+    <div class="four-col">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);margin-bottom:6px;">$</div>
+        <h4>Cost Efficiency</h4>
+        <p style="font-size:11px;margin:0;">Total cost of delivery, cost per capability, infrastructure spend</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);margin-bottom:6px;">&uarr;</div>
+        <h4>Productivity</h4>
+        <p style="font-size:11px;margin:0;">Throughput per person, agent automation rate, productive time ratio</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);margin-bottom:6px;">&laquo;</div>
+        <h4>Time to Market</h4>
+        <p style="font-size:11px;margin:0;">Lead time, cycle time, deployment frequency, idea-to-production</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:800;color:var(--blue-700);margin-bottom:6px;">&check;</div>
+        <h4>Quality &amp; Risk</h4>
+        <p style="font-size:11px;margin:0;">Test coverage, change failure rate, security posture, MTTR</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">24</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 25: Measurement Framework ======================= -->
+<div class="slide" data-slide="25">
+  <div class="slide-header">
+    <h2>Measurement Framework &mdash; KPIs &amp; Metrics</h2>
+    <span class="section-tag">Measure</span>
+  </div>
+  <div class="slide-body">
+    <table>
+      <tr>
+        <th style="width:18%;">Dimension</th>
+        <th style="width:28%;">KPI</th>
+        <th style="width:18%;">SDLC Baseline</th>
+        <th style="width:18%;">ADLC Target</th>
+        <th style="width:18%;">How to Measure</th>
+      </tr>
+      <tr>
+        <td rowspan="3" style="background:var(--blue-50);font-weight:600;color:var(--blue-800);vertical-align:middle;">Cost<br>Efficiency</td>
+        <td>Cost per capability delivered</td>
+        <td>$300K&ndash;$600K</td>
+        <td style="color:var(--blue-700);font-weight:600;">$5K&ndash;$15K</td>
+        <td style="font-size:11px;">Total spend / features shipped</td>
+      </tr>
+      <tr>
+        <td>Labour cost ratio</td>
+        <td>~85%</td>
+        <td style="color:var(--blue-700);font-weight:600;">~45%</td>
+        <td style="font-size:11px;">Labour spend / total pod spend</td>
+      </tr>
+      <tr>
+        <td>Token cost per feature</td>
+        <td>N/A</td>
+        <td style="color:var(--blue-700);font-weight:600;">$500&ndash;$2K</td>
+        <td style="font-size:11px;">Token spend / features shipped</td>
+      </tr>
+      <tr>
+        <td rowspan="3" style="background:var(--blue-50);font-weight:600;color:var(--blue-800);vertical-align:middle;">Productivity</td>
+        <td>Capabilities delivered / person / month</td>
+        <td>0.1&ndash;0.3</td>
+        <td style="color:var(--blue-700);font-weight:600;">3&ndash;8</td>
+        <td style="font-size:11px;">Features shipped / pod headcount</td>
+      </tr>
+      <tr>
+        <td>Agent automation rate</td>
+        <td>0%</td>
+        <td style="color:var(--blue-700);font-weight:600;">80&ndash;85%</td>
+        <td style="font-size:11px;">Agent tasks / total tasks</td>
+      </tr>
+      <tr>
+        <td>Productive time ratio</td>
+        <td>5&ndash;12%</td>
+        <td style="color:var(--blue-700);font-weight:600;">60&ndash;80%</td>
+        <td style="font-size:11px;">Value-add time / total elapsed</td>
+      </tr>
+      <tr>
+        <td rowspan="2" style="background:var(--blue-50);font-weight:600;color:var(--blue-800);vertical-align:middle;">Time to<br>Market</td>
+        <td>Idea-to-production lead time</td>
+        <td>3&ndash;6 months</td>
+        <td style="color:var(--blue-700);font-weight:600;">3&ndash;5 days</td>
+        <td style="font-size:11px;">Timestamp: request &rarr; live</td>
+      </tr>
+      <tr>
+        <td>Deployment frequency</td>
+        <td>Monthly / quarterly</td>
+        <td style="color:var(--blue-700);font-weight:600;">Daily / on-demand</td>
+        <td style="font-size:11px;">Deploys / time period</td>
+      </tr>
+      <tr>
+        <td rowspan="2" style="background:var(--blue-50);font-weight:600;color:var(--blue-800);vertical-align:middle;">Quality<br>&amp; Risk</td>
+        <td>Test coverage</td>
+        <td>40&ndash;55%</td>
+        <td style="color:var(--blue-700);font-weight:600;">90&ndash;95%</td>
+        <td style="font-size:11px;">Automated coverage reports</td>
+      </tr>
+      <tr>
+        <td>Change failure rate</td>
+        <td>15&ndash;30%</td>
+        <td style="color:var(--blue-700);font-weight:600;">&lt;5%</td>
+        <td style="font-size:11px;">Failed deploys / total deploys</td>
+      </tr>
+    </table>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">25</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 26: Reporting Framework ======================= -->
+<div class="slide" data-slide="26">
+  <div class="slide-header">
+    <h2>Reporting Framework &mdash; Dashboards &amp; Cadence</h2>
+    <span class="section-tag">Report</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>Dashboard Layers</h3>
+        <div class="card accent-border" style="margin-bottom:10px;">
+          <h4>Executive Dashboard <span class="tiny">(Monthly)</span></h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li>Total transformation ROI (cost saved vs invested)</li>
+            <li>Revenue per person trend</li>
+            <li>Pod count &amp; scale trajectory</li>
+            <li>Client satisfaction &amp; NPS impact</li>
+            <li>Competitive positioning metrics</li>
+          </ul>
+        </div>
+        <div class="card accent-border" style="margin-bottom:10px;">
+          <h4>Pod Performance Dashboard <span class="tiny">(Weekly)</span></h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li>Capabilities delivered this cycle</li>
+            <li>Cost per capability (trend line)</li>
+            <li>Agent automation rate</li>
+            <li>Token usage &amp; cost breakdown</li>
+            <li>Quality metrics (test coverage, CFR)</li>
+          </ul>
+        </div>
+        <div class="card accent-border">
+          <h4>Agent Operations Dashboard <span class="tiny">(Real-Time)</span></h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li>Agent health &amp; uptime</li>
+            <li>Token consumption (real-time burn rate)</li>
+            <li>Escalation rate (agent &rarr; human)</li>
+            <li>Error rate &amp; retry patterns</li>
+            <li>Model performance &amp; latency</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h3>Review Cadence</h3>
+        <table style="margin-bottom:16px;">
+          <tr><th>Cadence</th><th>Forum</th><th>Focus</th></tr>
+          <tr><td><strong>Daily</strong></td><td>Pod Standup</td><td style="font-size:11px;">Agent output quality, blockers, escalations</td></tr>
+          <tr><td><strong>Weekly</strong></td><td>Pod Review</td><td style="font-size:11px;">Productivity KPIs, cost trend, token optimisation</td></tr>
+          <tr><td><strong>Bi-weekly</strong></td><td>Client Sync</td><td style="font-size:11px;">Capability delivery, outcome achievement, feedback</td></tr>
+          <tr><td><strong>Monthly</strong></td><td>Exec Review</td><td style="font-size:11px;">ROI, scale progress, strategic adjustments</td></tr>
+          <tr><td><strong>Quarterly</strong></td><td>Value Board</td><td style="font-size:11px;">Transformation progress, pricing model, market position</td></tr>
+        </table>
+        <div class="card" style="background:var(--blue-50);">
+          <h4>Key Reporting Principle</h4>
+          <p style="font-size:12px;margin:0;">Every report answers: <strong>"What did we deliver, what did it cost, and how does that compare to the traditional alternative?"</strong> The counterfactual comparison keeps the value visible.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">26</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 27: Continuous Improvement ======================= -->
+<div class="slide" data-slide="27">
+  <div class="slide-header">
+    <h2>Continuous Improvement &mdash; The Optimisation Loop</h2>
+    <span class="section-tag">Improve</span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <h3>Cost Optimisation Levers</h3>
+        <div class="card" style="margin-bottom:10px;">
+          <h4>Token Cost Reduction</h4>
+          <div class="bar-chart">
+            <div class="bar-row">
+              <span class="bar-label" style="width:130px;">Prompt caching</span>
+              <div class="bar-track"><div class="bar-fill blue" style="width:60%;">40&ndash;60% saving</div></div>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label" style="width:130px;">Model tiering</span>
+              <div class="bar-track"><div class="bar-fill light" style="width:50%;">30&ndash;50% saving</div></div>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label" style="width:130px;">Fine-tuning</span>
+              <div class="bar-track"><div class="bar-fill accent" style="width:40%;">20&ndash;40% saving</div></div>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label" style="width:130px;">Batch processing</span>
+              <div class="bar-track"><div class="bar-fill blue" style="width:25%;">15&ndash;25% saving</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Productivity Amplifiers</h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li><strong>Agent specialisation:</strong> Purpose-built agents vs generic &mdash; 2&ndash;3&times; faster</li>
+            <li><strong>Context pre-loading:</strong> RAG pipeline tuning reduces agent latency 40%</li>
+            <li><strong>Workflow automation:</strong> Remove remaining manual handoffs</li>
+            <li><strong>Cross-pod learning:</strong> Best patterns propagated automatically</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h3>Time-to-Market Accelerators</h3>
+        <div class="card" style="margin-bottom:10px;">
+          <h4>Progressive Targets</h4>
+          <table>
+            <tr><th>Phase</th><th>Lead Time</th><th>Deploy Freq</th></tr>
+            <tr><td>Pilot (Month 1&ndash;2)</td><td>2&ndash;3 weeks</td><td>Weekly</td></tr>
+            <tr><td>Scale (Month 3&ndash;6)</td><td>5&ndash;10 days</td><td>2&ndash;3x / week</td></tr>
+            <tr><td>Mature (Month 6+)</td><td>3&ndash;5 days</td><td>Daily</td></tr>
+            <tr><td>Optimised (Year 2+)</td><td>1&ndash;2 days</td><td>On-demand</td></tr>
+          </table>
+        </div>
+        <div class="card" style="background:var(--blue-50);">
+          <h4>Quality Improvement Cycle</h4>
+          <ul style="font-size:12px;padding-left:16px;margin:0;">
+            <li><strong>Automated regression:</strong> Every agent output tested against golden datasets</li>
+            <li><strong>Failure analysis:</strong> Each CFR incident feeds agent improvement</li>
+            <li><strong>Security posture:</strong> Continuous scanning, not release-gate only</li>
+            <li><strong>Human review sampling:</strong> Statistical sampling for governance, not full review</li>
+          </ul>
+        </div>
+        <div class="card dark" style="margin-top:10px;text-align:center;padding:14px;">
+          <p style="font-size:13px;margin:0;"><strong>The compounding effect:</strong> Every improvement in cost, speed, or quality feeds back into the next cycle &mdash; the flywheel that makes ADLC self-improving.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">27</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 28: ROI Timeline ======================= -->
+<div class="slide" data-slide="28">
+  <div class="slide-header">
+    <h2>ROI Timeline &mdash; When Value Compounds</h2>
+    <span class="section-tag">Value Realization</span>
+  </div>
+  <div class="slide-body">
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;gap:0;margin-bottom:4px;">
+        <div style="width:12%;text-align:center;font-size:10px;color:var(--gray-500);">Month 0</div>
+        <div style="width:10%;text-align:center;font-size:10px;color:var(--gray-500);">M1</div>
+        <div style="width:10%;text-align:center;font-size:10px;color:var(--gray-500);">M2</div>
+        <div style="width:10%;text-align:center;font-size:10px;color:var(--gray-500);">M3</div>
+        <div style="width:10%;text-align:center;font-size:10px;color:var(--gray-500);">M4</div>
+        <div style="width:12%;text-align:center;font-size:10px;color:var(--gray-500);">M6</div>
+        <div style="width:12%;text-align:center;font-size:10px;color:var(--gray-500);">M9</div>
+        <div style="width:12%;text-align:center;font-size:10px;color:var(--gray-500);">M12</div>
+        <div style="width:12%;text-align:center;font-size:10px;color:var(--gray-500);">M18+</div>
+      </div>
+      <!-- Investment bar -->
+      <div style="display:flex;gap:0;margin-bottom:2px;height:28px;">
+        <div style="width:12%;background:var(--blue-900);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;">Invest</div>
+        <div style="width:10%;background:var(--blue-800);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;">Setup</div>
+        <div style="width:10%;background:var(--blue-700);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;">Pilot</div>
+        <div style="width:68%;background:var(--blue-50);border-radius:0 4px 4px 0;"></div>
+      </div>
+      <!-- Savings bar -->
+      <div style="display:flex;gap:0;margin-bottom:2px;height:28px;">
+        <div style="width:32%;background:var(--gray-100);border-radius:4px 0 0 4px;"></div>
+        <div style="width:10%;background:var(--blue-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--blue-800);">Break even</div>
+        <div style="width:58%;background:var(--blue-400);border-radius:0 4px 4px 0;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;">Accelerating savings &rarr;</div>
+      </div>
+    </div>
+    <div class="four-col" style="margin-bottom:16px;">
+      <div class="card" style="padding:14px;text-align:center;">
+        <h4>Month 0&ndash;2</h4>
+        <div style="font-size:20px;font-weight:800;color:var(--blue-900);">-$120K to -$200K</div>
+        <p style="font-size:11px;margin:4px 0 0;">Transformation investment. Training, agent build, infra setup.</p>
+      </div>
+      <div class="card" style="padding:14px;text-align:center;">
+        <h4>Month 3&ndash;4</h4>
+        <div style="font-size:20px;font-weight:800;color:var(--blue-600);">Break Even</div>
+        <p style="font-size:11px;margin:4px 0 0;">Monthly savings ($55&ndash;97K) offset remaining investment.</p>
+      </div>
+      <div class="card" style="padding:14px;text-align:center;">
+        <h4>Month 6</h4>
+        <div style="font-size:20px;font-weight:800;color:var(--blue-700);">+$150K&ndash;$290K</div>
+        <p style="font-size:11px;margin:4px 0 0;">Net positive. First pod profitable. Ready to scale pod 2&ndash;3.</p>
+      </div>
+      <div class="card" style="padding:14px;text-align:center;">
+        <h4>Month 12</h4>
+        <div style="font-size:20px;font-weight:800;color:var(--blue-700);">+$540K&ndash;$960K</div>
+        <p style="font-size:11px;margin:4px 0 0;">Year 1 net savings per pod. Scale economics compound.</p>
+      </div>
+    </div>
+    <div class="card" style="background:var(--blue-900);color:white;text-align:center;padding:16px;">
+      <p style="font-size:14px;margin:0;color:var(--blue-200);"><strong style="color:white;">At 10 pods (Year 2):</strong> Annual net savings of <strong style="color:var(--blue-300);font-size:18px;">$5.4M&ndash;$9.6M</strong> &nbsp;&middot;&nbsp; Transformation investment fully recovered in <strong style="color:var(--blue-300);">Month 3&ndash;4</strong> per pod</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">28</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 29: Value Scorecard ======================= -->
+<div class="slide" data-slide="29">
+  <div class="slide-header">
+    <h2>Value Realization Scorecard</h2>
+    <span class="section-tag">Tracking Template</span>
+  </div>
+  <div class="slide-body">
+    <p style="margin-bottom:12px;">Use this scorecard at each review cadence to track transformation value across all dimensions.</p>
+    <table>
+      <tr>
+        <th style="width:20%;">Dimension</th>
+        <th style="width:25%;">Metric</th>
+        <th style="width:13%;">Baseline</th>
+        <th style="width:13%;">Current</th>
+        <th style="width:13%;">Target</th>
+        <th style="width:16%;">Status</th>
+      </tr>
+      <tr>
+        <td rowspan="2" style="font-weight:600;color:var(--blue-800);vertical-align:middle;">Cost</td>
+        <td>Monthly pod cost</td><td>$105K</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>$23K</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td>Cost per capability</td><td>$400K</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>$10K</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td rowspan="2" style="font-weight:600;color:var(--blue-800);vertical-align:middle;">Productivity</td>
+        <td>Capabilities / person / month</td><td>0.2</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>5</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td>Automation rate</td><td>0%</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>85%</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td rowspan="2" style="font-weight:600;color:var(--blue-800);vertical-align:middle;">Speed</td>
+        <td>Idea-to-production</td><td>4 months</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>4 days</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td>Deploy frequency</td><td>Monthly</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>Daily</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td rowspan="2" style="font-weight:600;color:var(--blue-800);vertical-align:middle;">Quality</td>
+        <td>Test coverage</td><td>48%</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>93%</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td>Change failure rate</td><td>22%</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>&lt;5%</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--blue-800);">Revenue</td>
+        <td>Revenue per person/year</td><td>$192K</td><td style="color:var(--blue-700);font-weight:600;">Tracking</td><td>$840K</td>
+        <td><span class="pill blue">On Track</span></td>
+      </tr>
+    </table>
+    <p class="small" style="margin-top:10px;text-align:center;">Update "Current" column at each review cadence. Status: <span class="pill blue" style="font-size:9px;">On Track</span> &nbsp; <span class="pill" style="background:var(--blue-200);color:var(--blue-800);font-size:9px;">At Risk</span> &nbsp; <span class="pill" style="background:var(--gray-200);color:var(--gray-600);font-size:9px;">Behind</span></p>
+  </div>
+  <div class="slide-footer">
+    <span>Frontier Professional &amp; ADLC POV</span>
+    <span class="page-num">29</span>
+  </div>
+</div>
+
+<!-- ======================= SLIDE 30: Closing ======================= -->
+<div class="slide closing-slide" data-slide="30">
+  <div style="margin-bottom:32px;">
+    <h1 style="margin-bottom:16px;">The Ladder Is Open</h1>
+    <div style="width:80px;height:3px;background:var(--blue-400);margin:0 auto 24px;border-radius:2px;"></div>
+    <p style="max-width:700px;font-size:18px;line-height:1.7;">
+      The organisations that act now &mdash; training their people, building agent libraries, piloting pods, shifting to outcome-based pricing &mdash; will <strong style="color:var(--white);">own the next era</strong> of technology services.
+    </p>
+    <p style="max-width:700px;font-size:16px;margin-top:16px;color:var(--blue-300);">
+      Those that wait will find themselves competing for shrinking hourly-billing contracts in a market that has moved to outcomes.
+    </p>
+  </div>
+  <div style="padding:20px 32px;background:rgba(255,255,255,0.08);border-radius:10px;max-width:600px;">
+    <p style="font-style:italic;font-size:16px;color:var(--blue-200);margin-bottom:4px;">"The gap between AI capability and real enterprise value is not getting narrower &mdash; it is getting wider. The bridge is built by people."</p>
+    <p style="font-size:12px;color:var(--blue-400);margin:0;">Porkkovan Elangovan &amp; Khirthika V &nbsp;&middot;&nbsp; July 2026</p>
+  </div>
+  <p style="margin-top:40px;font-size:22px;font-weight:700;color:var(--white);">The only question is when you start climbing.</p>
+</div>
+
+</div><!-- /slide-container -->
+</div><!-- /slide-wrapper -->
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button id="prevBtn" onclick="navigate(-1)">&larr; Previous</button>
+  <div class="slide-info"><span id="currentSlide">1</span> / <span id="totalSlides">30</span></div>
+  <button id="nextBtn" onclick="navigate(1)">Next &rarr;</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    document.getElementById('currentSlide').textContent = current + 1;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === slides.length - 1;
+  }
+
+  function navigate(dir) { showSlide(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(slides.length - 1); }
+  });
+
+  document.getElementById('totalSlides').textContent = slides.length;
+
+  // Responsive scaling
+  function scaleSlides() {
+    const sw = window.innerWidth, sh = window.innerHeight - 52;
+    const scale = Math.min(sw / 1280, sh / 720, 1);
+    slides.forEach(s => s.style.transform = `scale(${scale})`);
+  }
+  window.addEventListener('resize', scaleSlides);
+  scaleSlides();
+</script>
+
+</body>
+</html>

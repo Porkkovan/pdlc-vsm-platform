@@ -20,8 +20,8 @@ class VSMAgentState(TypedDict, total=False):
 
     # Analysis outputs
     metrics:      dict        # Computed lean VSM metrics (PT, WT, LT, FE, CT)
-    bottlenecks:  list        # [{id, phaseId, activity, severity, metric, value, impact}]
-    improvements: list        # [{id, title, problem, improvement, agent, expectedPTReduction, ...}]
+    bottlenecks:  list        # [{id, phaseId, phaseName, activity, severity, wasteType, currentPT, currentWT, impact, feImpact, rootCauses, contributingFactors, businessImpact, linkedImprovements}]
+    improvements: list        # [{id, bottleneckId, phaseId, phaseName, activity, priority, title, problem, improvement, agent, type, expectedPTReduction, expectedWTReduction, timeToValue, roi, effort}]
 
     # Future state
     future_states: dict       # {option-a: {...}, option-b: {...}, option-c: {...}}

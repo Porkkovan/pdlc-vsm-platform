@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = True
 
-    # Database
-    database_url: str = f"sqlite+aiosqlite:///{BASE_DIR}/database/vsm.db"
+    # Database — PostgreSQL (override via DATABASE_URL env var)
+    database_url: str = "postgresql+asyncpg://postgres@localhost:5432/stump_db"
 
     # Azure OpenAI
     azure_openai_api_key: str = ""

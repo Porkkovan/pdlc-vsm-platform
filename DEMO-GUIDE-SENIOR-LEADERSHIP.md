@@ -1,4 +1,4 @@
-# PDLC VSM Platform — Senior Leadership Demo Guide
+# STUMP — Senior Leadership Demo Guide
 
 > **Purpose:** A structured walkthrough for presenting the platform to C-suite, VP, or Head-of-Engineering audiences. Total run time: **25–35 minutes** (or 15 min with the fast-track path).
 >

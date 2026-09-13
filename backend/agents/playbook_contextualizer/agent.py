@@ -42,13 +42,26 @@ async def run_playbook_contextualizer(
     team_context: dict,
     documents: dict,
 ) -> dict:
-    """Generate a context-enriched implementation playbook."""
+    """Generate a context-enriched implementation playbook.
+
+    For scenario_id == 'option-c', team_context may include a `c_platform` key
+    selecting one of {'homegrown', 'stump', 'bmad', 'copilot_workspace'}.
+    The selected platform's phasing, ops team sizing, and tooling overrides
+    are folded into the prompt so the generated playbook reflects the build/buy choice.
+    """
     logger.info(f"[Playbook Contextualizer] Generating refined playbook for {scenario_id}")
 
     metrics     = analysis_context.get("metrics", {})
     bottlenecks = analysis_context.get("bottlenecks", [])[:5]
     future      = analysis_context.get("future_states", {}).get(scenario_id, {})
     project     = analysis_context.get("project", {})
+
+    # Resolve Option C platform choice (defaults to 'homegrown') and load its details.
+    platform_block = None
+    if scenario_id == "option-c":
+        from ..business_case_builder.agent import C_PLATFORM_OPTIONS
+        platform_id = (team_context.get("c_platform") or "homegrown").strip().lower()
+        platform_block = C_PLATFORM_OPTIONS.get(platform_id) or C_PLATFORM_OPTIONS["homegrown"]
 
     provided_docs = [d for d in DOC_FIELDS if documents.get(d, "").strip()]
     missing_docs  = [d for d in DOC_FIELDS if not documents.get(d, "").strip()]
@@ -68,12 +81,13 @@ async def run_playbook_contextualizer(
     if has_llm():
         result = await _llm_generate(
             scenario_id, scenario_label, metrics, bottlenecks, future,
-            project, team_context, documents, provided_docs, missing_docs
+            project, team_context, documents, provided_docs, missing_docs,
+            platform_block,
         )
     else:
         result = _rule_based_enrichment(
             scenario_id, scenario_label, metrics, bottlenecks, future,
-            project, team_context, missing_docs
+            project, team_context, missing_docs, platform_block,
         )
 
     result["accuracy_pct"]   = accuracy_pct
@@ -85,12 +99,21 @@ async def run_playbook_contextualizer(
          "where_to_get": DOC_SOURCE.get(d, "")}
         for d in missing_docs
     ]
+    if platform_block:
+        result["c_platform"] = {
+            "id":            platform_block["id"],
+            "name":          platform_block["name"],
+            "tagline":       platform_block["tagline"],
+            "weeks_to_prod": platform_block["production_ready_weeks"],
+            "ops_team":      platform_block["platform_ops_team"],
+        }
     return result
 
 
 async def _llm_generate(
     scenario_id, scenario_label, metrics, bottlenecks, future,
-    project, tc, docs, provided_docs, missing_docs
+    project, tc, docs, provided_docs, missing_docs,
+    platform_block=None,
 ):
     bn_text = "\n".join(
         f"  - {b.get('activity','?')} [{b.get('severity','?')}]: {b.get('impact','')}"
@@ -156,7 +179,7 @@ Sponsors: {tc.get('key_sponsors','?')} | Concerns: {tc.get('known_concerns','?')
 === DOCUMENT CONTENT ===
 {docs_text if docs_text else "No documents provided."}
 
-=== PERSONALISATION RULES ===
+{_platform_prompt_block(platform_block)}=== PERSONALISATION RULES ===
 1. Reference ACTUAL tool names from the technology context (not generic names)
 2. Reference SPECIFIC bottlenecks by name when explaining why each action matters
 3. Use team's sprint length for sprint plan timing
@@ -164,6 +187,7 @@ Sponsors: {tc.get('key_sponsors','?')} | Concerns: {tc.get('known_concerns','?')
 5. If previous AI attempts failed, address that specifically in risks
 6. Reference actual team name and org name in executive summary
 7. Size effort estimates to the stated team size
+8. If a PLATFORM CHOICE block is present (Option C only), mirror its phasing structure in `sprint_plan`, size effort against its `Platform Ops Team`, and reference its specific tools, governance cadence, and known constraints in `risks` and `actions`
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {{
@@ -202,13 +226,35 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
     return _rule_based_enrichment(
         scenario_id, scenario_label, metrics, bottlenecks, future,
-        project, tc, []
+        project, tc, [], platform_block,
+    )
+
+
+def _platform_prompt_block(platform_block):
+    """Render the Option C platform-choice section for the LLM prompt."""
+    if not platform_block:
+        return ""
+    phasing_text = "\n".join(
+        f"  - {p['phase']}: {p['focus']}" for p in platform_block.get("playbook_phasing", [])
+    )
+    ops = platform_block.get("platform_ops_team", {})
+    tools_text = "\n".join(f"  • {t}" for t in platform_block.get("tools_changes", [])[:5])
+    return (
+        f"=== PLATFORM CHOICE FOR OPTION C ===\n"
+        f"Selected platform: {platform_block['name']}\n"
+        f"Tagline: {platform_block['tagline']}\n"
+        f"Production-ready in: {platform_block['production_ready_weeks']} weeks\n"
+        f"Platform Ops Team: {ops.get('size', '?')} — {', '.join(ops.get('roles', []))}\n"
+        f"\nPhasing (use this as the sprint_plan backbone):\n{phasing_text}\n"
+        f"\nKey tools / changes for this platform:\n{tools_text}\n"
+        f"\nKey constraints (reference in risks): "
+        f"{'; '.join(platform_block.get('cons', [])[:3])}\n\n"
     )
 
 
 def _rule_based_enrichment(
     scenario_id, scenario_label, metrics, bottlenecks, future,
-    project, tc, missing_docs
+    project, tc, missing_docs, platform_block=None,
 ):
     team     = project.get('team', tc.get('team_name', 'your team'))
     org      = project.get('organization', tc.get('organization', 'your organisation'))
@@ -222,14 +268,41 @@ def _rule_based_enrichment(
     source   = tc.get('source_control', 'your source control')
     top_bn   = bottlenecks[0].get('activity', 'manual approval gates') if bottlenecks else 'manual approval gates'
 
+    # If a platform choice exists (Option C), build the sprint plan from its phasing
+    if platform_block:
+        sprint_plan_override = []
+        ops_size = platform_block.get("platform_ops_team", {}).get("size", "small core team")
+        for i, p in enumerate(platform_block.get("playbook_phasing", []), 1):
+            sprint_plan_override.append({
+                "sprint": p["phase"],
+                "label": p["phase"].split("(")[0].strip(),
+                "actions": [
+                    {"who": platform_block["platform_ops_team"]["roles"][0]
+                            if platform_block.get("platform_ops_team", {}).get("roles") else "Platform Lead",
+                     "what": p["focus"]}
+                ],
+                "outcomes": [f"Phase {i} milestones achieved per {platform_block['name']} playbook"]
+            })
+        platform_summary = (
+            f"Platform choice for this Option C rollout: {platform_block['name']}. "
+            f"Production-ready in {platform_block['production_ready_weeks']} weeks with a {ops_size} Platform Ops team. "
+        )
+    else:
+        sprint_plan_override = None
+        platform_summary = ""
+
     return {
         "executive_summary": (
             f"This playbook guides {team} at {org} ({industry}) through {scenario_label}. "
+            f"{platform_summary}"
             f"The measured lead time of {lt} days and flow efficiency of {fe}% confirm significant headroom. "
             f"The critical bottleneck — {top_bn} — will be directly targeted in Sprint 1. "
             f"Target state: lead time {fut_lt} days and flow efficiency {fut_fe}%."
         ),
-        "duration_recommendation": "8–10 weeks",
+        "duration_recommendation": (
+            f"{platform_block['production_ready_weeks']} weeks (per {platform_block['name']} phasing)"
+            if platform_block else "8–10 weeks"
+        ),
         "target_metrics": [
             {"metric": "Lead Time", "baseline": f"{lt} days", "target": f"{fut_lt} days",
              "reduction": f"{future.get('vs_current',{}).get('lt_reduction_pct','?')}%",
@@ -237,7 +310,7 @@ def _rule_based_enrichment(
             {"metric": "Flow Efficiency", "baseline": f"{fe}%", "target": f"{fut_fe}%",
              "reduction": "improvement", "measure": "Re-run VSM on this platform"},
         ],
-        "sprint_plan": [
+        "sprint_plan": sprint_plan_override or [
             {"sprint": "Sprint 1 (Week 1–2)", "label": "Baseline & Foundation",
              "actions": [
                  {"who": "Tech Lead", "what": f"Run VSM baseline on this platform. Export metrics to {alm} dashboard before ANY tool changes."},

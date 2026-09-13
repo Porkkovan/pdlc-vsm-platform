@@ -1,0 +1,17 @@
+**/.git
+**/.env
+**/node_modules
+**/venv
+**/__pycache__
+**/.pytest_cache
+**/dist
+**/*.pyc
+**/uploads/*
+**/.DS_Store
+**/Presentation
+**/*.pptx
+**/*.docx
+**/docs
+database/vsm.db
+**/*.md
+deploy/.deploy-info.json

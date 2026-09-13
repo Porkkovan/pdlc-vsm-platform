@@ -26,7 +26,7 @@ function fmtTime(hours) {
 }
 
 // ── Single phase card ──────────────────────────────────────────────
-function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT, currWT, mode }) {
+function PhaseCard({ phase, processTime, waitTime, isBottleneck, isPrereq, aiAgent, currPT, currWT, mode, onClick }) {
   const total  = processTime + waitTime
   const fe     = total > 0 ? (processTime / total) * 100 : 0
   const ptBarW = total > 0 ? Math.max(4, Math.round((processTime / total) * 100)) : 4
@@ -48,9 +48,9 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
     typeBg     = 'bg-green-500/20'
     typeLabel  = 'AI AGENT'
   } else if (isBottleneck) {
-    borderCls  = 'border-orange-400'
-    typeColor  = 'text-orange-400'
-    typeBg     = 'bg-orange-500/20'
+    borderCls  = 'border-teal-400'
+    typeColor  = 'text-teal-400'
+    typeBg     = 'bg-teal-500/20'
     typeLabel  = phaseType
   } else if (phaseType === 'DECISION') {
     borderCls  = 'border-yellow-400'
@@ -64,12 +64,38 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
     typeLabel  = 'PROCESS'
   }
 
+  const isClickable = mode === 'current' && !!onClick && !isPrereq
+
+  if (isPrereq) {
+    return (
+      <div
+        className="flex-shrink-0 rounded-xl border-2 border-dashed border-gray-600/40 p-3.5 flex flex-col gap-0 bg-[#0d1b2e] opacity-35"
+        style={{ width: '168px', minWidth: '168px' }}
+        title="Planning prerequisite — excluded from story cycle time totals"
+      >
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase mb-2 self-start bg-gray-700/40 text-gray-500">
+          PREREQ
+        </div>
+        <div className="text-gray-400 font-bold text-sm leading-snug mb-3" style={{ minHeight: '36px' }}>
+          {phase.name}
+        </div>
+        <div className="text-xs text-gray-600 mt-auto">Excluded from<br/>story cycle totals</div>
+      </div>
+    )
+  }
+
   return (
-    <div className={clsx(
-      'flex-shrink-0 rounded-xl border-2 p-3.5 flex flex-col gap-0',
-      'bg-[#0d1b2e]',
-      borderCls
-    )} style={{ width: '168px', minWidth: '168px' }}>
+    <div
+      onClick={isClickable ? onClick : undefined}
+      className={clsx(
+        'flex-shrink-0 rounded-xl border-2 p-3.5 flex flex-col gap-0',
+        'bg-[#0d1b2e]',
+        borderCls,
+        isClickable && 'cursor-pointer hover:brightness-125 hover:scale-[1.02] transition-all duration-150'
+      )}
+      style={{ width: '168px', minWidth: '168px' }}
+      title={isClickable ? 'Click to view bottlenecks for this phase' : undefined}
+    >
 
       {/* Type label */}
       <div className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase mb-2 self-start', typeBg, typeColor)}>
@@ -105,7 +131,7 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
         <div className="flex justify-between items-center mb-1">
           <span className="text-gray-400 text-xs">Wait</span>
           <div className="flex items-center gap-1.5">
-            <span className={clsx('font-bold text-xs', isBottleneck ? 'text-orange-300' : 'text-amber-300')}>
+            <span className={clsx('font-bold text-xs', isBottleneck ? 'text-teal-300' : 'text-cyan-300')}>
               {fmtTime(waitTime)}
             </span>
             {wtDelta > 0 && (
@@ -115,7 +141,7 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
         </div>
         <div className="h-1.5 bg-gray-700/80 rounded-full overflow-hidden">
           <div
-            className={clsx('h-full rounded-full', isBottleneck ? 'bg-orange-400' : 'bg-amber-400')}
+            className={clsx('h-full rounded-full', isBottleneck ? 'bg-teal-400' : 'bg-cyan-400')}
             style={{ width: `${wtBarW}%` }}
           />
         </div>
@@ -125,7 +151,7 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
       <div className="flex items-center justify-between">
         <span className={clsx(
           'text-xs font-semibold',
-          fe >= 50 ? 'text-green-400' : fe >= 30 ? 'text-yellow-400' : 'text-orange-400'
+          fe >= 50 ? 'text-green-400' : fe >= 30 ? 'text-yellow-400' : 'text-teal-400'
         )}>
           FE {fe.toFixed(0)}%
         </span>
@@ -136,8 +162,15 @@ function PhaseCard({ phase, processTime, waitTime, isBottleneck, aiAgent, currPT
 
       {/* Bottleneck warning */}
       {isBottleneck && (
-        <div className="mt-1.5 flex items-center gap-1 text-orange-400 text-xs font-semibold">
+        <div className="mt-1.5 flex items-center gap-1 text-teal-400 text-xs font-semibold">
           <span>⚠</span><span>Bottleneck</span>
+        </div>
+      )}
+
+      {/* Click hint */}
+      {isClickable && (
+        <div className="mt-1.5 text-[10px] text-gray-500 text-right">
+          tap to drill down →
         </div>
       )}
 
@@ -166,10 +199,10 @@ function MetricPill({ label, value, sub, color }) {
   const colorMap = {
     white:  'text-white',
     blue:   'text-blue-400',
-    amber:  'text-amber-400',
+    amber:  'text-cyan-400',
     green:  'text-green-400',
-    orange: 'text-orange-400',
-    red:    'text-red-400',
+    orange: 'text-teal-400',
+    red:    'text-sky-400',
     purple: 'text-purple-400',
   }
   return (
@@ -190,12 +223,14 @@ function MetricPill({ label, value, sub, color }) {
  * @param {number} totalWT
  * @param {number} flowEfficiency
  */
-export default function VSMVisualFlow({ phases, mode = 'current', scenarioLabel, totalPT, totalWT, flowEfficiency }) {
+export default function VSMVisualFlow({ phases, mode = 'current', scenarioLabel, totalPT, totalWT, flowEfficiency, onPhaseClick, vsmLevel }) {
   const totalLT   = (totalPT + totalWT) / 8
   const feNum     = parseFloat(flowEfficiency) || 0
-  const feColor   = feNum >= 40 ? 'green' : feNum >= 25 ? 'amber' : 'orange'
+  const feColor   = feNum >= 40 ? 'green' : feNum >= 25 ? 'emerald' : 'teal'
   const ptDays    = totalPT / 8
   const wtDays    = totalWT / 8
+  const activeCount = phases.filter(p => !p.isPrereq).length
+  const totalCount  = phases.length
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: '#0a1628' }}>
@@ -203,11 +238,11 @@ export default function VSMVisualFlow({ phases, mode = 'current', scenarioLabel,
       <div className="flex items-center justify-between px-6 pt-5 pb-4">
         <div>
           <div className="text-white font-bold text-base">
-            {mode === 'current' ? 'Current State — PDLC Value Stream Map' : `Future State — ${scenarioLabel}`}
+            {mode === 'current' ? 'Current State — STUMP Value Stream Map' : `Future State — ${scenarioLabel}`}
           </div>
           <div className="text-gray-400 text-xs mt-0.5">
             {mode === 'current'
-              ? '7 Phases · 36 Activities · Lean VSM · Industry Benchmarks'
+              ? `${totalCount} Phases · ${activeCount} Active · Lean VSM · Industry Benchmarks · Click a phase to drill into bottlenecks`
               : `AI-Transformed State · Benchmark-grounded projections`}
           </div>
         </div>
@@ -216,11 +251,11 @@ export default function VSMVisualFlow({ phases, mode = 'current', scenarioLabel,
             <span className="w-3 h-3 rounded-sm bg-blue-500 inline-block" /> Process Time
           </span>
           <span className="flex items-center gap-1.5 text-gray-400">
-            <span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" /> Wait Time
+            <span className="w-3 h-3 rounded-sm bg-cyan-400 inline-block" /> Wait Time
           </span>
           {mode === 'current' && (
             <span className="flex items-center gap-1.5 text-gray-400">
-              <span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" /> Bottleneck
+              <span className="w-3 h-3 rounded-sm bg-teal-400 inline-block" /> Bottleneck
             </span>
           )}
           {mode === 'future' && (
@@ -268,10 +303,12 @@ export default function VSMVisualFlow({ phases, mode = 'current', scenarioLabel,
                 processTime={p.processTime}
                 waitTime={p.waitTime}
                 isBottleneck={p.isBottleneck}
+                isPrereq={p.isPrereq}
                 aiAgent={p.aiAgent}
                 currPT={p.currPT}
                 currWT={p.currWT}
                 mode={mode}
+                onClick={onPhaseClick ? () => onPhaseClick(p.id) : undefined}
               />
               {idx < phases.length - 1 && <Arrow />}
             </div>

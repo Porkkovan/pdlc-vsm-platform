@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
 import clsx from 'clsx'
+import StepReviewBar from '../components/StepReviewBar'
 
 const API = '/api/v1'
 
 // ─── Maturity band config ────────────────────────────────────────────
 const MATURITY_BANDS = {
-  'Pre-Crawl': { color: 'bg-red-100 text-red-700 border-red-300',      dot: 'bg-red-500',    range: '1–2' },
-  'Crawl':     { color: 'bg-orange-100 text-orange-700 border-orange-300', dot: 'bg-orange-500', range: '3–4' },
-  'Walk':      { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', dot: 'bg-yellow-500', range: '5–6' },
-  'Run':       { color: 'bg-green-100 text-green-700 border-green-300',  dot: 'bg-green-500',  range: '7–8' },
-  'Fly':       { color: 'bg-blue-100 text-blue-700 border-blue-300',    dot: 'bg-blue-500',   range: '9–10' },
+  'L1 — Foundation':      { color: 'bg-red-100 text-red-700 border-red-300',         dot: 'bg-red-500',    range: '1–2' },
+  'L2 — Augmentation':    { color: 'bg-orange-100 text-orange-700 border-orange-300', dot: 'bg-orange-500', range: '3–4' },
+  'L3 — Automation':      { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', dot: 'bg-yellow-500', range: '5–6' },
+  'L4 — Transformation':  { color: 'bg-green-100 text-green-700 border-green-300',    dot: 'bg-green-500',  range: '7–8' },
+  'L5 — Reinvention':     { color: 'bg-blue-100 text-blue-700 border-blue-300',       dot: 'bg-blue-500',   range: '9–10' },
 }
 
 const PRIORITY_COLORS = {
-  Critical: 'bg-red-100 text-red-700',
-  High:     'bg-orange-100 text-orange-700',
+  Critical: 'bg-sky-100 text-sky-700',
+  High:     'bg-teal-100 text-teal-700',
   Medium:   'bg-yellow-100 text-yellow-700',
   Low:      'bg-gray-100 text-gray-600',
 }
@@ -44,13 +45,13 @@ const DIM_COLORS = {
   Cultural:    { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', icon: '👥' },
   Measurement: { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700',   icon: '📊' },
   Process:     { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-700',  icon: '⚙️' },
-  Technical:   { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', icon: '💻' },
+  Technical:   { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700', icon: '💻' },
 }
 
 function scoreColor(score) {
   if (!score || score === 0) return 'bg-gray-100 text-gray-400'
-  if (score <= 2) return 'bg-red-100 text-red-700'
-  if (score <= 4) return 'bg-orange-100 text-orange-700'
+  if (score <= 2) return 'bg-sky-100 text-sky-700'
+  if (score <= 4) return 'bg-teal-100 text-teal-700'
   if (score <= 6) return 'bg-yellow-100 text-yellow-800'
   if (score <= 8) return 'bg-green-100 text-green-700'
   return 'bg-blue-100 text-blue-700'
@@ -58,7 +59,7 @@ function scoreColor(score) {
 
 function ScoreBadge({ score }) {
   if (!score) return <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 rounded">—</span>
-  const band = score <= 2 ? 'Pre-Crawl' : score <= 4 ? 'Crawl' : score <= 6 ? 'Walk' : score <= 8 ? 'Run' : 'Fly'
+  const band = score <= 2 ? 'L1 — Foundation' : score <= 4 ? 'L2 — Augmentation' : score <= 6 ? 'L3 — Automation' : score <= 8 ? 'L4 — Transformation' : 'L5 — Reinvention'
   const cfg = MATURITY_BANDS[band]
   return (
     <span className={clsx('text-xs font-semibold px-2 py-0.5 rounded border', cfg.color)}>
@@ -384,8 +385,10 @@ export default function DevOpsMaturityPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-2 text-sm">{error}</div>
+        <div className="bg-sky-50 border border-sky-200 text-sky-700 rounded px-4 py-2 text-sm">{error}</div>
       )}
+
+      <StepReviewBar stepKey="devops_maturity" stepLabel="DevOps Maturity Assessment" />
 
       {/* Tabs */}
       <div className="border-b border-gray-200 flex gap-0">
@@ -540,7 +543,7 @@ export default function DevOpsMaturityPage() {
                           <div className="text-xs font-medium text-gray-700">{cfg?.label || s.type}</div>
                           <div className="text-xs text-gray-500 truncate">{s.url}</div>
                         </div>
-                        <button onClick={() => removeSource(i)} className="text-red-400 hover:text-red-600 text-sm">✕</button>
+                        <button onClick={() => removeSource(i)} className="text-sky-400 hover:text-sky-600 text-sm">✕</button>
                       </div>
                     )
                   })}
@@ -653,7 +656,7 @@ export default function DevOpsMaturityPage() {
                             {q.competency}
                           </span>
                           {q.weight === 3 && (
-                            <span className="ml-2 text-xs bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded">High Impact</span>
+                            <span className="ml-2 text-xs bg-sky-50 text-sky-600 border border-sky-200 px-1.5 py-0.5 rounded">High Impact</span>
                           )}
                         </div>
                         {score != null && <ScoreBadge score={score} />}
@@ -668,11 +671,11 @@ export default function DevOpsMaturityPage() {
                         </summary>
                         <div className="mt-2 grid grid-cols-5 gap-1 text-xs">
                           {[
-                            { range: '1-2', label: 'Pre-Crawl', bg: 'bg-red-50 border-red-200' },
-                            { range: '3-4', label: 'Crawl',     bg: 'bg-orange-50 border-orange-200' },
-                            { range: '5-6', label: 'Walk',      bg: 'bg-yellow-50 border-yellow-200' },
-                            { range: '7-8', label: 'Run',       bg: 'bg-green-50 border-green-200' },
-                            { range: '9-10',label: 'Fly',       bg: 'bg-blue-50 border-blue-200' },
+                            { range: '1-2', label: 'L1 Foundation',     bg: 'bg-red-50 border-red-200' },
+                            { range: '3-4', label: 'L2 Augmentation',  bg: 'bg-orange-50 border-orange-200' },
+                            { range: '5-6', label: 'L3 Automation',    bg: 'bg-yellow-50 border-yellow-200' },
+                            { range: '7-8', label: 'L4 Transformation',bg: 'bg-green-50 border-green-200' },
+                            { range: '9-10',label: 'L5 Reinvention',   bg: 'bg-blue-50 border-blue-200' },
                           ].map(band => (
                             <div key={band.range} className={clsx('border rounded p-1.5', band.bg)}>
                               <div className="font-semibold mb-0.5">{band.range} {band.label}</div>
@@ -706,7 +709,7 @@ export default function DevOpsMaturityPage() {
                           >
                             <option value="">— Score —</option>
                             {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                              <option key={n} value={n}>{n} – {n <= 2 ? 'Pre-Crawl' : n <= 4 ? 'Crawl' : n <= 6 ? 'Walk' : n <= 8 ? 'Run' : 'Fly'}</option>
+                              <option key={n} value={n}>{n} – {n <= 2 ? 'L1 Foundation' : n <= 4 ? 'L2 Augmentation' : n <= 6 ? 'L3 Automation' : n <= 8 ? 'L4 Transformation' : 'L5 Reinvention'}</option>
                             ))}
                           </select>
                           {type === 'manual' && (
@@ -763,10 +766,10 @@ export default function DevOpsMaturityPage() {
 
           {/* Failed state */}
           {assessment?.status === 'failed' && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="bg-sky-50 border border-sky-200 rounded-lg p-6 text-center">
               <div className="text-3xl mb-2">❌</div>
-              <div className="font-semibold text-red-800">Scoring Failed</div>
-              <button onClick={handleRunScoring} className="mt-3 text-sm bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              <div className="font-semibold text-sky-800">Scoring Failed</div>
+              <button onClick={handleRunScoring} className="mt-3 text-sm bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700">
                 Retry Scoring
               </button>
             </div>
@@ -819,7 +822,7 @@ export default function DevOpsMaturityPage() {
                         </div>
                         <div className="flex justify-between">
                           <span>Lowest</span>
-                          <span className="font-medium text-red-600">{data.lowest}</span>
+                          <span className="font-medium text-sky-600">{data.lowest}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Scored</span>
@@ -829,7 +832,7 @@ export default function DevOpsMaturityPage() {
                       {/* Score bar */}
                       <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className={clsx('h-full rounded-full', data.average >= 7 ? 'bg-green-500' : data.average >= 5 ? 'bg-yellow-500' : 'bg-red-500')}
+                          className={clsx('h-full rounded-full', data.average >= 7 ? 'bg-green-500' : data.average >= 5 ? 'bg-yellow-500' : 'bg-sky-500')}
                           style={{ width: `${(data.average / 10) * 100}%` }}
                         />
                       </div>
@@ -858,16 +861,16 @@ export default function DevOpsMaturityPage() {
                 )}
 
                 {summary?.critical_gaps?.length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-red-800 mb-3 flex items-center gap-2">
+                  <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-sky-800 mb-3 flex items-center gap-2">
                       <span>🚨</span> Critical Gaps (Immediate Action)
                     </h4>
                     <div className="space-y-1">
                       {summary.critical_gaps.slice(0, 6).map((g, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
-                          <span className="text-red-500">●</span>
+                          <span className="text-sky-500">●</span>
                           <span className="text-gray-700 truncate">{g.competency}</span>
-                          <span className="ml-auto text-red-700 font-semibold">{g.current_score}/10</span>
+                          <span className="ml-auto text-sky-700 font-semibold">{g.current_score}/10</span>
                         </div>
                       ))}
                     </div>
@@ -903,18 +906,18 @@ export default function DevOpsMaturityPage() {
                       {/* Low scores */}
                       {lowInfs.length > 0 && (
                         <div>
-                          <div className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">
+                          <div className="text-xs font-semibold text-sky-600 uppercase tracking-wide mb-2">
                             ⚠️ Low Areas (Scores 1–4)
                           </div>
                           <div className="space-y-2">
                             {lowInfs.map((inf, i) => (
-                              <div key={i} className="bg-red-50 border border-red-100 rounded p-2 text-xs">
-                                <div className="font-semibold text-red-700 mb-0.5">
+                              <div key={i} className="bg-sky-50 border border-sky-100 rounded p-2 text-xs">
+                                <div className="font-semibold text-sky-700 mb-0.5">
                                   {inf.competency} · {inf.score}/10
                                 </div>
                                 <div className="text-gray-600 leading-snug">{inf.inference}</div>
                                 {inf.impact === 'High' && (
-                                  <div className="mt-1 text-red-600 font-medium">⚡ High business impact</div>
+                                  <div className="mt-1 text-sky-600 font-medium">⚡ High business impact</div>
                                 )}
                               </div>
                             ))}

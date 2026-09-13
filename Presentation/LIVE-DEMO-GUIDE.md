@@ -1,4 +1,4 @@
-# PDLC VSM Platform — Live Demo Guide
+# STUMP — Live Demo Guide
 ## US Bank | Team Phoenix | Payments & Transfers
 
 **Purpose:** Step-by-step script for presenting the full platform end-to-end.

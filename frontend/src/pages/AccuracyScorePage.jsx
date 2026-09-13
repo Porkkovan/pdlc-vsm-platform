@@ -8,15 +8,15 @@ const GRADE_CONFIG = {
   'A — Highly Accurate':    { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   bar: 'bg-blue-500' },
   'B — Good Accuracy':      { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200',  bar: 'bg-green-500' },
   'C — Adequate':           { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', bar: 'bg-yellow-400' },
-  'D — Limited Accuracy':   { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', bar: 'bg-orange-400' },
-  'F — Insufficient Data':  { bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    bar: 'bg-red-400' },
+  'D — Limited Accuracy':   { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', bar: 'bg-teal-400' },
+  'F — Insufficient Data':  { bg: 'bg-sky-50',    text: 'text-sky-700',    border: 'border-sky-200',    bar: 'bg-sky-400' },
 }
 
 const STEP_ICONS = ['🔗', '📐', '📊', '⚠️', '💡', '🔮', '💼', '📋']
 
 function ScoreBar({ score, max = 100, colorClass }) {
   const pct = (score / max) * 100
-  const color = colorClass || (score >= 80 ? 'bg-blue-500' : score >= 65 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-400' : score >= 35 ? 'bg-orange-400' : 'bg-red-400')
+  const color = colorClass || (score >= 80 ? 'bg-blue-500' : score >= 65 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-400' : score >= 35 ? 'bg-teal-400' : 'bg-sky-400')
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -35,7 +35,7 @@ function ComponentRow({ label, value }) {
         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={clsx('h-full rounded-full',
-              value >= 70 ? 'bg-green-400' : value >= 45 ? 'bg-yellow-400' : 'bg-red-400'
+              value >= 70 ? 'bg-green-400' : value >= 45 ? 'bg-yellow-400' : 'bg-sky-400'
             )}
             style={{ width: `${value}%` }}
           />
@@ -281,7 +281,7 @@ export default function AccuracyScorePage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded">{error}</div>
+        <div className="bg-sky-50 border border-sky-200 text-sky-700 text-sm px-4 py-2 rounded">{error}</div>
       )}
 
       {/* Tabs */}
@@ -348,7 +348,7 @@ export default function AccuracyScorePage() {
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-0.5">
                       <div
                         className={clsx('h-full rounded-full',
-                          step.score >= 75 ? 'bg-green-400' : step.score >= 55 ? 'bg-yellow-400' : 'bg-red-400'
+                          step.score >= 75 ? 'bg-green-400' : step.score >= 55 ? 'bg-yellow-400' : 'bg-sky-400'
                         )}
                         style={{ width: `${step.score}%` }}
                       />
@@ -361,11 +361,11 @@ export default function AccuracyScorePage() {
 
             {/* Pipeline notes */}
             {data.pipeline_notes?.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div className="text-xs font-semibold text-amber-700 mb-2">💡 To Improve Accuracy</div>
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
+                <div className="text-xs font-semibold text-cyan-700 mb-2">💡 To Improve Accuracy</div>
                 <ul className="space-y-1.5">
                   {data.pipeline_notes.map((note, i) => (
-                    <li key={i} className="text-xs text-amber-700 flex items-start gap-1">
+                    <li key={i} className="text-xs text-cyan-700 flex items-start gap-1">
                       <span className="shrink-0 mt-0.5">→</span>{note}
                     </li>
                   ))}
@@ -441,7 +441,7 @@ export default function AccuracyScorePage() {
                       <div className="flex items-center gap-2">
                         <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={clsx('h-full rounded-full', step.components?.kb_retrieval >= 70 ? 'bg-green-400' : step.components?.kb_retrieval >= 40 ? 'bg-yellow-400' : 'bg-red-400')}
+                            className={clsx('h-full rounded-full', step.components?.kb_retrieval >= 70 ? 'bg-green-400' : step.components?.kb_retrieval >= 40 ? 'bg-yellow-400' : 'bg-sky-400')}
                             style={{ width: `${step.components?.kb_retrieval || 0}%` }}
                           />
                         </div>
@@ -485,7 +485,7 @@ export default function AccuracyScorePage() {
                   src.status === 'active'   ? 'border-green-200 bg-green-50' :
                   src.status === 'partial'  ? 'border-yellow-200 bg-yellow-50' :
                   src.status === 'planned'  ? 'border-gray-200 bg-gray-50' :
-                  'border-red-100 bg-red-50'
+                  'border-sky-100 bg-sky-50'
                 )}>
                   <div className="flex items-center gap-2 mb-1">
                     <span>{src.icon}</span>
@@ -495,7 +495,7 @@ export default function AccuracyScorePage() {
                       src.status === 'active'   ? 'bg-green-100 text-green-700' :
                       src.status === 'partial'  ? 'bg-yellow-100 text-yellow-700' :
                       src.status === 'planned'  ? 'bg-gray-100 text-gray-500' :
-                      'bg-red-100 text-red-600'
+                      'bg-sky-100 text-sky-600'
                     )}>
                       {src.status}
                     </span>

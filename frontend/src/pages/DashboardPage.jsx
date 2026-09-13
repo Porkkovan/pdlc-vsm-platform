@@ -1,8 +1,7 @@
 import { useApp } from '../contexts/AppContext'
 import { Link } from 'react-router-dom'
 import { PDLC_PHASES, FUTURE_STATE_SCENARIOS } from '../data/pdlcPhases'
-import { useState } from 'react'
-import { projectsApi } from '../services/api'
+import { useTargetScenario } from '../components/useTargetScenario'
 
 const WORKFLOW_STEPS = [
   { step: 1, label: 'Connect ALM',         path: '/alm-connect',     icon: '🔗', desc: 'Jira, ADO, CSV' },
@@ -16,32 +15,17 @@ const WORKFLOW_STEPS = [
 ]
 
 export default function DashboardPage() {
-  const { project, saveProject, analysisResult, vsmLevel, setVsmLevel, addNotification } = useApp()
-  const [editCtx, setEditCtx] = useState(false)
-  const [draft, setDraft] = useState({ ...project })
-  const [saving, setSaving] = useState(false)
-
-  const saveContext = async () => {
-    setSaving(true)
-    try {
-      await saveProject({ ...project, ...draft })
-      addNotification('Project saved', 'success')
-    } catch {
-      addNotification('Saved locally (backend not reachable)', 'info')
-    } finally {
-      setSaving(false)
-      setEditCtx(false)
-    }
-  }
+  const { project, analysisResult, vsmLevel, setVsmLevel } = useApp()
+  const ts = useTargetScenario(project?.id)
 
   const hasContext = project.organization || project.team
 
   return (
     <div className="space-y-6 fade-in">
       {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-sky-500 to-indigo-400 rounded-2xl p-8 text-white shadow-lg">
         <div className="max-w-3xl">
-          <h2 className="text-3xl font-bold mb-2">PDLC Value Stream Mapping Platform</h2>
+          <h2 className="text-3xl font-bold mb-2">Strategic Transformation Unified Mapping Platform</h2>
           <p className="text-blue-100 text-lg mb-4">
             End-to-end multi-agent platform — connect your ALM tools, baseline your engineering practices, identify bottlenecks, and design AI-powered future states.
           </p>
@@ -63,58 +47,47 @@ export default function DashboardPage() {
           <div className="card-header flex items-center justify-between">
             <div>
               <h3 className="font-bold text-gray-800">Team Context</h3>
-              <p className="text-xs text-gray-500">Select the team whose VSM you are analysing</p>
+              <p className="text-xs text-gray-500">Active team scope for VSM analysis across all modules</p>
             </div>
-            <button onClick={() => { setDraft({ ...project }); setEditCtx(!editCtx) }}
-              className="text-xs px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 font-semibold text-gray-700">
-              {editCtx ? 'Cancel' : 'Edit'}
-            </button>
+            <div className="flex gap-2">
+              {project.productGroups?.length > 0 ? (
+                <Link to="/dora-assessment"
+                  className="text-xs px-3 py-1 rounded-lg bg-violet-100 hover:bg-violet-200 font-semibold text-violet-700">
+                  Switch Team
+                </Link>
+              ) : null}
+              <Link to="/alm-connect"
+                className="text-xs px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 font-semibold text-gray-700">
+                {project.organization ? 'Edit Org Setup' : 'Setup Org'}
+              </Link>
+            </div>
           </div>
           <div className="card-body">
-            {editCtx ? (
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: 'organization', label: 'Organisation', placeholder: 'e.g. Acme Bank' },
-                  { key: 'portfolio',    label: 'Portfolio',    placeholder: 'e.g. Digital Banking' },
-                  { key: 'productGroup', label: 'Product Group',placeholder: 'e.g. Payments' },
-                  { key: 'team',         label: 'Product Team', placeholder: 'e.g. Team Phoenix' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1">{f.label}</label>
-                    <input
-                      value={draft[f.key] || ''}
-                      onChange={e => setDraft(d => ({ ...d, [f.key]: e.target.value }))}
-                      placeholder={f.placeholder}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[
+                { label: 'Organisation', value: project.organization, icon: '🏢' },
+                { label: 'Portfolio',    value: project.portfolio,    icon: '📁' },
+                { label: 'Product Group',value: project.productGroup, icon: '📦' },
+                { label: 'Product',      value: project.product,      icon: '🗂' },
+                { label: 'Product Team', value: project.team,         icon: '👥' },
+              ].map(f => (
+                <div key={f.label} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">{f.icon} {f.label}</div>
+                  <div className="font-semibold text-gray-800 text-sm truncate">
+                    {f.value || <span className="text-gray-400 font-normal italic">Not set</span>}
                   </div>
-                ))}
-                <div className="col-span-2">
-                  <button onClick={saveContext} disabled={saving} className="btn-primary w-full py-2 text-sm">
-                    {saving ? '⏳ Saving...' : '💾 Save & Persist'}
-                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: 'Organisation', value: project.organization, icon: '🏢' },
-                  { label: 'Portfolio',    value: project.portfolio,    icon: '📁' },
-                  { label: 'Product Group',value: project.productGroup, icon: '📦' },
-                  { label: 'Product Team', value: project.team,         icon: '👥' },
-                ].map(f => (
-                  <div key={f.label} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">{f.icon} {f.label}</div>
-                    <div className="font-semibold text-gray-800 text-sm truncate">
-                      {f.value || <span className="text-gray-400 font-normal italic">Not set</span>}
-                    </div>
-                  </div>
-                ))}
+              ))}
+            </div>
+            {project.productGroups?.length > 0 && (
+              <div className="mt-3 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                📦 {project.productGroups.length} product group{project.productGroups.length !== 1 ? 's' : ''} · {project.productGroups.reduce((n, g) => n + (g.teams?.length || 0), 0)} teams defined.
+                {' '}To assess a different team, use <strong>Switch Team</strong> above or go to DORA Assessment.
               </div>
             )}
-            {!hasContext && !editCtx && (
-              <p className="text-xs text-amber-600 mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                Set your team context to associate VSM analysis with a specific team. You can also configure this in the ALM Connect step.
+            {!hasContext && (
+              <p className="text-xs text-cyan-600 mt-3 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
+                Set up your organisation structure in <strong>ALM Connect → Organisation Setup</strong>, then select a product team in <strong>DORA Assessment</strong>.
               </p>
             )}
           </div>
@@ -253,7 +226,33 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Future state scenarios overview */}
+      {/* Future state overview — configured target path, or generic A/B/C */}
+      {ts.configured ? (
+        <div className="card">
+          <div className="card-header flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-gray-800">Your Target State Path</h3>
+              <p className="text-sm text-gray-500">Configured journey to your envisioned future state{ts.platform && <> on {(ts.platform || '').replace('_', ' ')}</>}</p>
+            </div>
+            <Link to="/target-state" className="text-xs font-semibold text-sky-700 hover:underline">Open Studio →</Link>
+          </div>
+          <div className="card-body">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {ts.steps.map((s, i) => (
+                <div key={s.step ?? i} className={`border-2 rounded-xl p-5 ${s.is_target ? 'border-emerald-300 bg-emerald-50/40' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-2 py-0.5 rounded font-bold text-sm text-white ${s.is_target ? 'bg-emerald-600' : 'bg-sky-600'}`}>{s.is_target ? '★ ' : ''}L{s.level}</span>
+                    <span className="text-xs font-semibold text-gray-600">{s.automation_pct}% automation</span>
+                  </div>
+                  <div className="font-bold text-gray-800 mb-1">{s.label}</div>
+                  <div className="text-xs text-gray-500 mb-2">{s.ml_band}</div>
+                  <div className="text-xs text-gray-600">Humans: {s.human_roles_retained?.join(', ')}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="card">
         <div className="card-header">
           <h3 className="font-bold text-gray-800">3 Future State Scenarios</h3>
@@ -291,6 +290,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }
