@@ -888,8 +888,9 @@ export default function BusinessCasePage() {
   const [tsCfg, setTsCfg] = useState(null)
   const [tsSteps, setTsSteps] = useState([])      // [{level,label,outcome_scenario,is_target}]
   const [tsStepIdx, setTsStepIdx] = useState(0)
+  const [tsPlatformDetail, setTsPlatformDetail] = useState(null) // platform_detail from roadmap response
   useEffect(() => {
-    if (!project?.id) { setTsCfg(null); setTsSteps([]); return }
+    if (!project?.id) { setTsCfg(null); setTsSteps([]); setTsPlatformDetail(null); return }
     const load = () => targetStateApi.getConfig(project.id).then(d => {
       const cfg = d && d.configured !== false ? d : null
       setTsCfg(cfg)
@@ -899,6 +900,7 @@ export default function BusinessCasePage() {
           interim_count: cfg.interim_count, risk_appetite: cfg.risk_appetite,
         }).then(rm => {
           setTsSteps(rm.steps || [])
+          setTsPlatformDetail(rm.platform_detail || null)
           const tgtIdx = (rm.steps || []).findIndex(s => s.is_target)
           const idx = tgtIdx >= 0 ? tgtIdx : (rm.steps || []).length - 1
           setTsStepIdx(idx)
@@ -1030,7 +1032,30 @@ export default function BusinessCasePage() {
   const scenario = FUTURE_STATE_SCENARIOS.find(s => s.id === activeScenario)
   const bc = editedCases[activeScenario]
   const tl = IMPLEMENTATION_TIMELINES[activeScenario]
-  const pb = editedPlaybooks[activeScenario]
+  const basePb = editedPlaybooks[activeScenario]
+
+  // When Target State Studio is configured, override playbook header + phasing with level/platform context
+  const activeStep = tsSteps[tsStepIdx]
+  const pb = (tsCfg && tsPlatformDetail && activeStep && basePb)
+    ? {
+        ...basePb,
+        label: `L${activeStep.level} — ${activeStep.label} (${tsPlatformDetail.name || tsPlatformDetail.id})`,
+        executiveSummary: `${activeStep.summary || basePb.executiveSummary} Platform: ${tsPlatformDetail.name}. ${tsPlatformDetail.tagline || ''}`.trim(),
+        teamSize: activeStep.human_roles_retained
+          ? `${activeStep.human_roles_retained} retained roles`
+          : basePb.teamSize,
+        teamDuration: tsPlatformDetail.playbook_phasing?.length
+          ? tsPlatformDetail.playbook_phasing[tsPlatformDetail.playbook_phasing.length - 1]?.phase?.match(/\d+/g)?.pop()
+            ? `~${tsPlatformDetail.playbook_phasing[tsPlatformDetail.playbook_phasing.length - 1].phase.match(/\d+/g).pop()}+ weeks`
+            : basePb.teamDuration
+          : basePb.teamDuration,
+        sprintPlan: (tsPlatformDetail.playbook_phasing || []).map((p, i) => ({
+          sprint: `Phase ${i + 1}`, label: p.phase,
+          actions: [{ who: 'Team', what: p.focus }],
+          outcomes: [],
+        })),
+      }
+    : basePb
 
   const openEdit = (source, section, idx) => {
     const data = source === 'cases' ? editedCases : editedPlaybooks
@@ -1120,7 +1145,7 @@ export default function BusinessCasePage() {
                     <span className="text-xs opacity-80">· {s.label}</span>
                   </div>
                   <div className={`text-[10px] mt-0.5 ${isActive ? 'text-sky-100' : 'text-gray-400'}`}>
-                    {s.outcome_scenario.replace('option-', 'Option ').toUpperCase()}
+                    {s.ml_band || s.outcome_scenario.replace('option-', 'Option ').toUpperCase()}
                     {s.is_target && ' (Target)'}
                   </div>
                 </button>
@@ -1786,9 +1811,9 @@ export default function BusinessCasePage() {
             <div className="flex items-start gap-3">
               <div className="text-3xl shrink-0">🗂️</div>
               <div className="flex-1">
-                <div className="font-bold text-emerald-900 text-base">This Playbook is the One-Stop Document for {scenario?.label}</div>
+                <div className="font-bold text-emerald-900 text-base">This Playbook is the One-Stop Document for {activeStep ? `L${activeStep.level} — ${activeStep.label}` : scenario?.label}</div>
                 <div className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                  Everything you need to execute {scenario?.label} is consolidated below — sprint-by-sprint plan with detailed <strong>how-to steps</strong>, plus inline coverage of every change captured in the dedicated tabs. Use this as your single source of truth; jump to a specific tab only when you need to drill deeper.
+                  Everything you need to execute {activeStep ? `L${activeStep.level} (${activeStep.label})` : scenario?.label}{tsPlatformDetail ? ` on ${tsPlatformDetail.name}` : ''} is consolidated below — phase-by-phase plan with detailed <strong>how-to steps</strong>, plus inline coverage of every change captured in the dedicated tabs. Use this as your single source of truth; jump to a specific tab only when you need to drill deeper.
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
                   <a href="#pb-tools"     className="bg-white border border-emerald-200 text-emerald-800 px-3 py-1 rounded-full hover:bg-emerald-100">🧰 Tools & Tech ({pb.toolsChanges?.length || 0})</a>
@@ -1869,8 +1894,9 @@ export default function BusinessCasePage() {
                             </div>
                           ))}
                         </div>
+                        {sp.outcomes && sp.outcomes.length > 0 && (
                         <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="text-xs font-semibold text-green-800 mb-1">Sprint Outcomes:</div>
+                          <div className="text-xs font-semibold text-green-800 mb-1">Phase Outcomes:</div>
                           <ul className="space-y-1">
                             {sp.outcomes.map((o, oi) => (
                               <li key={oi} className="flex items-center gap-2 text-xs text-green-700">
@@ -1879,6 +1905,7 @@ export default function BusinessCasePage() {
                             ))}
                           </ul>
                         </div>
+                        )}
                       </div>
                     )}
                   </div>
