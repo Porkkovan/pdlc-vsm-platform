@@ -13,6 +13,101 @@ import CostModelEditor from '../components/CostModelEditor'
 import TargetStateBanner from '../components/TargetStateBanner'
 import StepReviewBar from '../components/StepReviewBar'
 
+// ─── Playbook Action Enrichment ──────────────────────────────────────────────
+// Splits a platform phasing "focus" paragraph into individual actions and enriches
+// each with who, description, how-to steps, tools, and success criteria based on
+// keyword matching.  Keeps content platform-aware by injecting the platform name.
+const ACTION_ENRICHMENT = [
+  { match: /hire|transfer|recruit/i, who: 'Engineering Lead',
+    desc: 'Identify and onboard the right talent — internal transfers or external hires — to fill critical platform roles.',
+    how: '1. Define role requirements and JDs for each position.\n2. Check internal talent pool first — identify engineers with adjacent AI/ML experience.\n3. Post external roles with 2-week hiring sprint timeline.\n4. Run technical interview focused on agent orchestration, LLM evaluation, prompt engineering.\n5. Onboard with 1-week platform bootcamp.',
+    tools: 'HR system, LinkedIn Recruiter, Internal talent marketplace', success: 'All positions filled and onboarded within the phase timeline' },
+  { match: /stand up.*team|build.*team|form.*team/i, who: 'Engineering Lead',
+    desc: 'Assemble the AI Platform Engineering team with clear roles, reporting lines, and sprint cadence.',
+    how: '1. Define team charter: mission, scope, SLAs, escalation path.\n2. Assign roles: Platform Lead, LLM Engineers, SREs, Prompt Engineers.\n3. Set up team Slack channel, Jira board, and weekly sync cadence.\n4. Create team working agreement (code review policy, on-call rotation, deployment authority).\n5. Establish Day-1 priorities and first sprint backlog.',
+    tools: 'Jira/ADO, Slack/Teams, Confluence', success: 'Team operational with sprint cadence, working agreement, and first backlog prioritised' },
+  { match: /LangGraph|orchestrat|infra/i, who: 'Platform Engineer',
+    desc: 'Provision the foundational infrastructure for agent orchestration, including LLM endpoints, vector stores, and observability.',
+    how: '1. Provision Azure OpenAI (or chosen LLM provider) endpoints — GPT-4o for complex agents, GPT-4o-mini for routine.\n2. Deploy LangGraph runtime on Kubernetes (AKS/EKS) with auto-scaling.\n3. Set up pgvector or Weaviate as the knowledge store.\n4. Deploy observability stack: Langfuse / LangSmith for agent tracing.\n5. Configure CI/CD for agent code (GitHub Actions / ADO Pipelines).\n6. Run smoke tests on each component.',
+    tools: 'Azure OpenAI, LangGraph, Kubernetes, pgvector, Langfuse', success: 'Infrastructure provisioned, smoke tests passing, agents deployable via CI/CD' },
+  { match: /first.*agent|build.*agent|high.impact/i, who: 'LLM Engineer',
+    desc: 'Build and deploy the first batch of high-impact agents in shadow mode to validate the platform without disrupting existing workflows.',
+    how: '1. Prioritise agents by PDLC phase impact: Code Generator, Code Reviewer, QA Orchestrator, Release Gate, Monitor.\n2. Implement each agent using LangGraph StateGraph with structured input/output schemas.\n3. Wire MCP tool integrations (source control, CI/CD, ALM).\n4. Deploy in shadow mode — agents run alongside humans but don\'t block workflows.\n5. Build evaluation suite: golden datasets per agent, acceptance rate tracking.\n6. Run for 2 weeks minimum before moving to next phase.',
+    tools: 'LangGraph, MCP Tools, Evaluation framework', success: 'First 5 agents running in shadow mode with >80% acceptance rate on golden datasets' },
+  { match: /shadow mode|remaining.*agent|progressive/i, who: 'Platform Team',
+    desc: 'Expand agent coverage across all PDLC phases while running in shadow mode to build confidence before promotion.',
+    how: '1. Add agents in priority order (highest wait-time reduction first).\n2. Each agent follows: build → unit test → shadow deploy → 1-week evaluation → review.\n3. Wire inter-agent context sharing via shared state store.\n4. Implement drift detection: monitor output quality scores daily.\n5. Build rollback procedures for each agent.\n6. Run weekly agent performance review with team.',
+    tools: 'LangGraph, Agent evaluation suite, Drift detection', success: 'All agents deployed in shadow mode, evaluation scores tracked, rollback tested' },
+  { match: /MCP.*tool|evaluation|drift/i, who: 'Platform Engineer',
+    desc: 'Connect agents to production tools and establish quality guardrails with evaluation and drift detection.',
+    how: '1. Configure MCP tool connections: source control (GitHub/ADO), CI/CD, ALM (Jira), monitoring.\n2. Build evaluation suite with golden test cases per agent.\n3. Set up automated drift detection — alert when acceptance rate drops below threshold.\n4. Create agent performance dashboard showing quality scores, latency, cost per invocation.',
+    tools: 'MCP, GitHub/ADO API, Evaluation framework, Grafana/Datadog', success: 'All tools connected, evaluation running on schedule, drift alerts configured' },
+  { match: /Product Definer|Product Builder|role/i, who: 'Transformation Lead',
+    desc: 'Define the new human roles that will operate alongside agents — Product Definer (outcomes) and Product Builder (oversight).',
+    how: '1. Draft role descriptions: Product Definer (sets outcome briefs, acceptance criteria, approves final output) and Product Builder (monitors agent orchestration, tunes prompts, handles exceptions).\n2. Map existing roles to new roles — identify who transitions to which.\n3. Design 4-week reskilling curriculum per role.\n4. Run role definition workshops with affected team members.\n5. Begin parallel-run: team operates in both old and new role structures for 2–4 weeks.',
+    tools: 'HR system, Training platform, Workshop materials', success: 'Role definitions published, reskilling curriculum designed, parallel-run started' },
+  { match: /promote|primary|cutover/i, who: 'Platform Lead',
+    desc: 'Transition agents from shadow to primary — they become the default for their PDLC activities, with humans in oversight.',
+    how: '1. Rank agents by risk: promote lowest-risk first (CI/CD, monitoring, then code, design).\n2. For each agent: announce cutover date → run 1-week "primary with veto" mode → review acceptance rate → confirm or rollback.\n3. Update team workflows and ceremonies to reflect agent-primary operation.\n4. Keep human override authority active — any team member can pause an agent.\n5. Daily standup includes agent health check for first 2 weeks post-promotion.',
+    tools: 'Agent orchestration platform, Team communication', success: 'Agents promoted to primary one phase at a time, acceptance rates maintained' },
+  { match: /workforce|transition|resk/i, who: 'HR / Transformation Lead',
+    desc: 'Execute the people transition plan — reskilling, role changes, and redeployment alongside agent promotion.',
+    how: '1. Communicate transition timeline and support resources to all affected team members.\n2. Begin reskilling programmes: 3–4 weeks per person, role-specific curriculum.\n3. Run parallel operation: old and new roles active simultaneously.\n4. Gradual handover: reduce old role responsibilities as agent takes over.\n5. Support redeployment for roles that are fully absorbed by agents.\n6. Monthly check-in with every affected individual.',
+    tools: 'HR system, Training platform, Reskilling materials', success: 'All affected individuals transitioned with reskilling complete, no involuntary disruption' },
+  { match: /governance|council/i, who: 'Product Owner / Governance Lead',
+    desc: 'Establish the AI Governance Council to oversee agent performance, ethics, compliance, and continuous improvement.',
+    how: '1. Charter the council: membership (PO, Tech Lead, Compliance, Security), cadence (monthly), decision authority.\n2. Define governance KPIs: agent acceptance rate, override rate, compliance incidents, cost per transaction.\n3. Create governance dashboard (pull from agent telemetry).\n4. Run first governance review: inspect agent decisions, review overrides, validate compliance evidence.\n5. Publish governance report template for monthly cadence.',
+    tools: 'Governance dashboard, Agent telemetry, Compliance tools', success: 'Governance Council operational, monthly reviews running, KPIs tracked' },
+  { match: /autonomous|steady.state|all.*agent/i, who: 'Platform Team',
+    desc: 'Operate in steady-state — all agents running autonomously across the full PDLC with continuous improvement.',
+    how: '1. Confirm all agents at target acceptance rate (>90%).\n2. Establish monthly Agent Performance Review cadence.\n3. Activate cost optimisation loop: model tiering, caching, batch API.\n4. Run quarterly model evaluation — test newer models against current performance.\n5. Document full platform runbook for team replication.',
+    tools: 'Agent platform, Cost dashboard, Model evaluation pipeline', success: 'All agents autonomous, monthly reviews running, cost optimised, runbook documented' },
+  { match: /monthly.*review|performance.*review/i, who: 'Platform Lead',
+    desc: 'Run regular agent performance reviews to catch degradation early and drive continuous improvement.',
+    how: '1. Pull agent metrics: acceptance rate, latency, cost, override frequency, error rate.\n2. Compare to previous period — flag any >5% degradation.\n3. Review override logs — understand why humans intervened.\n4. Prioritise tuning actions: prompt updates, model swaps, tool configuration.\n5. Update agent evaluation datasets with new edge cases found.',
+    tools: 'Agent telemetry dashboard, Evaluation suite', success: 'Performance review completed monthly, improvement actions tracked and closed' },
+  { match: /cost.*optim|evaluation.*pipeline|model.*drift/i, who: 'Platform Engineer',
+    desc: 'Continuously optimise agent costs and detect model drift before it impacts quality.',
+    how: '1. Implement model tiering: route simple tasks to cheaper models (GPT-4o-mini), complex to GPT-4o.\n2. Enable semantic caching for repeated queries (30–50% cost reduction).\n3. Deploy automated drift detection — compare agent output quality daily against golden datasets.\n4. Set up alerting: quality score < threshold triggers investigation.\n5. Quarterly model swap evaluation: test newer/cheaper models.',
+    tools: 'LLM gateway, Semantic cache, Drift detection, Cost dashboard', success: 'Cost reduced 30%+ from baseline, drift detected within 24h, no quality regression' },
+  { match: /subscri|provision|environment|sign/i, who: 'Platform Admin',
+    desc: 'Procure the platform subscription and provision the environment — cloud or on-premise as required.',
+    how: '1. Complete procurement: sign subscription agreement, confirm SLA and data residency terms.\n2. Provision platform environment (cloud or licensed on-prem).\n3. Configure SSO/SAML integration for team access.\n4. Verify network connectivity: platform ↔ source control, CI/CD, ALM.\n5. Run platform health checks and confirm all services operational.',
+    tools: 'Platform admin console, SSO provider, Network config', success: 'Platform provisioned, SSO live, all connectivity verified, health checks passing' },
+  { match: /connect|integration|source control|CI.CD|ALM/i, who: 'Platform Admin',
+    desc: 'Connect the platform to the organisation\'s existing toolchain — source control, CI/CD, ALM, and observability.',
+    how: '1. Configure source control integration (GitHub / ADO / GitLab) — webhook + API token.\n2. Connect CI/CD pipeline (GitHub Actions / Jenkins / ADO Pipelines).\n3. Integrate ALM tool (Jira / ADO Boards) — bidirectional sync.\n4. Connect observability stack (Datadog / Dynatrace / Grafana).\n5. Run end-to-end integration test: trigger agent → verify tool actions.',
+    tools: 'Source control, CI/CD, ALM, Observability APIs', success: 'All integrations live, end-to-end test passing, bidirectional sync confirmed' },
+  { match: /configur|policy|threshold|compliance/i, who: 'Policy Engineer',
+    desc: 'Configure platform agents with organisation-specific policies, quality thresholds, and compliance frameworks.',
+    how: '1. Define policy thresholds: code quality minimums, security severity gates, test coverage targets.\n2. Configure compliance frameworks: SOC2, ISO27001, PCI-DSS as applicable.\n3. Set override authority levels: who can override which agent decisions.\n4. Configure code style guides and naming conventions.\n5. Validate configuration with test runs against sample repositories.',
+    tools: 'Platform config UI, Compliance frameworks, Sample repos', success: 'All policies configured, compliance frameworks active, test validation passing' },
+  { match: /BMAD|framework|methodology|pattern/i, who: 'BMAD Practitioner',
+    desc: 'Adopt and customise the BMAD framework methodology for the organisation\'s agent development practices.',
+    how: '1. Complete BMAD framework training for the platform team.\n2. Review BMAD agent pattern library — select patterns for each PDLC phase.\n3. Customise patterns to organisation context (domain language, tech stack, compliance requirements).\n4. Set up BMAD pattern repository with version control.\n5. Author first agent using BMAD pattern — validate the workflow.',
+    tools: 'BMAD framework, Pattern library, Version control', success: 'Team trained, patterns customised, first agent authored and validated using BMAD' },
+  { match: /open.source|observability|Langfuse|LangSmith/i, who: 'SRE / Platform Engineer',
+    desc: 'Deploy the open-source observability stack for agent monitoring, tracing, and performance visibility.',
+    how: '1. Deploy Langfuse or LangSmith for agent execution tracing.\n2. Configure trace collection for all agent invocations.\n3. Build dashboards: latency, cost, quality scores, error rates per agent.\n4. Set up alerting rules: latency P95 > threshold, error rate > 5%.\n5. Integrate with existing org monitoring (Grafana / Datadog).',
+    tools: 'Langfuse/LangSmith, Grafana, Alerting system', success: 'All agents traced, dashboards live, alerting configured' },
+]
+
+function enrichPlaybookActions(focusText, platformName, phaseName) {
+  return focusText.split(/\.\s+/).filter(s => s.trim()).map(sentence => {
+    const title = sentence.trim().replace(/\.$/, '')
+    const match = ACTION_ENRICHMENT.find(e => e.match.test(title))
+    const pn = platformName || 'the platform'
+    return {
+      who: match?.who || 'Team',
+      what: title + '.',
+      description: match?.desc?.replace(/the platform/gi, pn) || '',
+      how: match?.how?.replace(/the platform/gi, pn) || '',
+      tools: match?.tools || '',
+      success: match?.success || '',
+    }
+  })
+}
+
 // ─── Business Case Data ──────────────────────────────────────────────────────
 const BUSINESS_CASES = {
   'option-a': {
@@ -796,69 +891,107 @@ const OPTION_META = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 // ─── Reusable: Editable Action List ──────────────────────────────────────────
-// Inline edit/add/remove for string-based action lists (roadmap lanes, playbook sprints, etc.)
+// Rich expandable action cards with description, how-to, tools, success criteria.
+// Supports both string items (roadmap) and object items (playbook sprints).
 function EditableActionList({ items, onChange, tone = 'indigo' }) {
+  const [expandIdx, setExpandIdx] = useState(null)
   const [editIdx, setEditIdx] = useState(null)
-  const [editText, setEditText] = useState('')
+  const [editForm, setEditForm] = useState({})
   const [adding, setAdding] = useState(false)
-  const [addText, setAddText] = useState('')
+  const [addForm, setAddForm] = useState({ who: '', what: '', description: '', how: '', tools: '', success: '' })
 
-  const startEdit = (i) => { setEditIdx(i); setEditText(items[i]?.what ?? items[i] ?? '') }
+  const isObj = (x) => x && typeof x === 'object'
+  const startEdit = (i) => {
+    const item = items[i]
+    setEditIdx(i)
+    setEditForm(isObj(item) ? { who: item.who || '', what: item.what || '', description: item.description || '', how: item.how || '', tools: item.tools || '', success: item.success || '' }
+      : { who: '', what: item || '', description: '', how: '', tools: '', success: '' })
+  }
   const saveEdit = () => {
     if (editIdx === null) return
     const next = [...items]
-    if (typeof next[editIdx] === 'object') next[editIdx] = { ...next[editIdx], what: editText }
-    else next[editIdx] = editText
-    onChange(next)
-    setEditIdx(null)
+    if (isObj(next[editIdx])) next[editIdx] = { ...next[editIdx], ...editForm }
+    else next[editIdx] = editForm.what || editForm.description || ''
+    onChange(next); setEditIdx(null); setExpandIdx(editIdx)
   }
-  const remove = (i) => { onChange(items.filter((_, j) => j !== i)) }
+  const remove = (i) => { onChange(items.filter((_, j) => j !== i)); if (expandIdx === i) setExpandIdx(null) }
   const addItem = () => {
-    if (!addText.trim()) return
-    const entry = typeof items[0] === 'object' ? { who: 'Team', what: addText.trim() } : addText.trim()
+    if (!addForm.what.trim()) return
+    const entry = isObj(items[0]) ? { ...addForm } : addForm.what.trim()
     onChange([...items, entry])
-    setAddText(''); setAdding(false)
+    setAddForm({ who: '', what: '', description: '', how: '', tools: '', success: '' }); setAdding(false)
   }
 
+  const inputCls = "w-full text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+  const labelCls = "text-xs font-semibold text-gray-500 mb-0.5 block"
+
+  const renderEditForm = (form, setForm, onSave, onCancel) => (
+    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-2.5 ml-7">
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className={labelCls}>Owner / Role</label><input value={form.who} onChange={e => setForm({...form, who: e.target.value})} className={inputCls} placeholder="e.g. Platform Lead, Tech Lead" /></div>
+        <div><label className={labelCls}>Action Title</label><input value={form.what} onChange={e => setForm({...form, what: e.target.value})} className={inputCls} placeholder="Short action title" /></div>
+      </div>
+      <div><label className={labelCls}>Description — What & Why</label><textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} rows={2} placeholder="What this action involves and why it matters" /></div>
+      <div><label className={labelCls}>How to Execute — Step-by-step</label><textarea value={form.how} onChange={e => setForm({...form, how: e.target.value})} className={inputCls} rows={3} placeholder="1. First step&#10;2. Second step&#10;3. ..." /></div>
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className={labelCls}>Tools / Resources</label><input value={form.tools} onChange={e => setForm({...form, tools: e.target.value})} className={inputCls} placeholder="e.g. LangGraph, Azure OpenAI, Jira" /></div>
+        <div><label className={labelCls}>Success Criteria</label><input value={form.success} onChange={e => setForm({...form, success: e.target.value})} className={inputCls} placeholder="How to know this is done" /></div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button onClick={onSave} className="text-xs bg-emerald-600 text-white px-4 py-1.5 rounded-lg hover:bg-emerald-700 font-semibold">Save</button>
+        <button onClick={onCancel} className="text-xs bg-gray-200 text-gray-600 px-4 py-1.5 rounded-lg hover:bg-gray-300">Cancel</button>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {items.map((item, i) => {
         const text = item?.what ?? item
         const who = item?.who
+        const desc = item?.description
+        const how = item?.how
+        const tools = item?.tools
+        const success = item?.success
+        const hasDetail = desc || how || tools || success
+        const isExpanded = expandIdx === i
         const isEditing = editIdx === i
+
+        if (isEditing) return <div key={i}>{renderEditForm(editForm, setEditForm, saveEdit, () => setEditIdx(null))}</div>
+
         return (
-          <div key={i} className="group flex items-start gap-2">
-            <span className={`bg-${tone}-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1`}>{i + 1}</span>
-            {isEditing ? (
-              <div className="flex-1 flex gap-1.5">
-                <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={2}
-                  className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" />
-                <button onClick={saveEdit} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700 shrink-0 h-8 mt-0.5">Save</button>
-                <button onClick={() => setEditIdx(null)} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-300 shrink-0 h-8 mt-0.5">Cancel</button>
+          <div key={i} className={`group rounded-xl border transition-all ${isExpanded ? 'border-indigo-300 bg-white shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+            <div className="flex items-start gap-3 px-3 py-2.5 cursor-pointer" onClick={() => setExpandIdx(isExpanded ? null : i)}>
+              <span className={`bg-${tone}-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5`}>{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    {who && <span className="font-semibold text-indigo-900 text-xs mr-1.5 bg-indigo-50 px-1.5 py-0.5 rounded">{who}</span>}
+                    <span className="text-sm font-medium text-gray-800">{text}</span>
+                  </div>
+                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => startEdit(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-blue-100 hover:text-blue-700" title="Edit">✏️</button>
+                    <button onClick={() => remove(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-red-100 hover:text-red-700" title="Remove">✕</button>
+                  </div>
+                </div>
+                {!isExpanded && desc && <div className="text-xs text-gray-500 mt-0.5 truncate">{desc}</div>}
               </div>
-            ) : (
-              <div className="flex-1 flex items-start gap-2">
-                <div className="flex-1 text-sm text-gray-700">
-                  {who && <span className="font-semibold text-indigo-900 text-xs mr-1">{who}:</span>}
-                  {text}
-                </div>
-                <div className="opacity-0 group-hover:opacity-100 flex gap-1 shrink-0 transition-opacity">
-                  <button onClick={() => startEdit(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-blue-100 hover:text-blue-700" title="Edit">✏️</button>
-                  <button onClick={() => remove(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-red-100 hover:text-red-700" title="Remove">✕</button>
-                </div>
+              <span className="text-gray-400 text-xs shrink-0 mt-1">{isExpanded ? '▲' : '▼'}</span>
+            </div>
+            {isExpanded && (
+              <div className="border-t border-gray-100 px-4 pb-3 pt-2 space-y-2 text-sm">
+                {desc && <div><span className="text-xs font-semibold text-gray-500">Description:</span><div className="text-gray-700 mt-0.5">{desc}</div></div>}
+                {how && <div><span className="text-xs font-semibold text-gray-500">How to Execute:</span><div className="text-gray-700 mt-0.5 whitespace-pre-line font-mono text-xs bg-gray-50 rounded-lg p-2.5 border border-gray-200">{how}</div></div>}
+                {tools && <div className="flex items-start gap-2"><span className="text-xs font-semibold text-gray-500 shrink-0">Tools:</span><div className="flex flex-wrap gap-1">{tools.split(',').map((t,ti) => <span key={ti} className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full border border-indigo-200">{t.trim()}</span>)}</div></div>}
+                {success && <div><span className="text-xs font-semibold text-gray-500">Success Criteria:</span><div className="text-emerald-700 mt-0.5 text-xs bg-emerald-50 rounded-lg px-2.5 py-1.5 border border-emerald-200">{success}</div></div>}
+                {!hasDetail && <div className="text-xs text-gray-400 italic">No details yet — click ✏️ to add description, how-to steps, tools, and success criteria.</div>}
               </div>
             )}
           </div>
         )
       })}
-      {adding ? (
-        <div className="flex gap-1.5 ml-7">
-          <textarea value={addText} onChange={e => setAddText(e.target.value)} rows={2} placeholder="Describe the action..."
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" autoFocus />
-          <button onClick={addItem} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700 shrink-0 h-8 mt-0.5">Add</button>
-          <button onClick={() => { setAdding(false); setAddText('') }} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-300 shrink-0 h-8 mt-0.5">Cancel</button>
-        </div>
-      ) : (
+      {adding ? renderEditForm(addForm, setAddForm, addItem, () => { setAdding(false); setAddForm({ who: '', what: '', description: '', how: '', tools: '', success: '' }) })
+      : (
         <button onClick={() => setAdding(true)}
           className="ml-7 text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 py-1">
           <span className="text-base leading-none">+</span> Add action
@@ -1137,11 +1270,12 @@ export default function BusinessCasePage() {
         }).then(rm => {
           setTsSteps(rm.steps || [])
           setTsPlatformDetail(rm.platform_detail || null)
-          // Build editable sprint plan from platform phasing — split each focus into sentences as separate actions
+          // Build editable sprint plan from platform phasing — split and enrich each action
           if (rm.platform_detail?.playbook_phasing) {
+            const platformName = rm.platform_detail.name || rm.platform_detail.id || ''
             setEditedTsSprintPlan(rm.platform_detail.playbook_phasing.map((p, i) => ({
               sprint: `Phase ${i + 1}`, label: p.phase,
-              actions: p.focus.split(/\.\s+/).filter(s => s.trim()).map(s => ({ who: 'Team', what: s.trim().replace(/\.$/, '') + '.' })),
+              actions: enrichPlaybookActions(p.focus, platformName, p.phase),
               outcomes: [],
             })))
           }
@@ -1295,7 +1429,7 @@ export default function BusinessCasePage() {
           : basePb.teamDuration,
         sprintPlan: editedTsSprintPlan || (tsPlatformDetail.playbook_phasing || []).map((p, i) => ({
           sprint: `Phase ${i + 1}`, label: p.phase,
-          actions: p.focus.split(/\.\s+/).filter(s => s.trim()).map(s => ({ who: 'Team', what: s.trim().replace(/\.$/, '') + '.' })),
+          actions: enrichPlaybookActions(p.focus, tsPlatformDetail.name || '', p.phase),
           outcomes: [],
         })),
       }
