@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../contexts/AppContext'
 import { FUTURE_STATE_SCENARIOS } from '../data/pdlcPhases'
 import { getOptionTotals } from '../data/futureStatePhases'
@@ -795,6 +795,240 @@ const OPTION_META = {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
+// ─── Reusable: Editable Action List ──────────────────────────────────────────
+// Inline edit/add/remove for string-based action lists (roadmap lanes, playbook sprints, etc.)
+function EditableActionList({ items, onChange, tone = 'indigo' }) {
+  const [editIdx, setEditIdx] = useState(null)
+  const [editText, setEditText] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [addText, setAddText] = useState('')
+
+  const startEdit = (i) => { setEditIdx(i); setEditText(items[i]?.what ?? items[i] ?? '') }
+  const saveEdit = () => {
+    if (editIdx === null) return
+    const next = [...items]
+    if (typeof next[editIdx] === 'object') next[editIdx] = { ...next[editIdx], what: editText }
+    else next[editIdx] = editText
+    onChange(next)
+    setEditIdx(null)
+  }
+  const remove = (i) => { onChange(items.filter((_, j) => j !== i)) }
+  const addItem = () => {
+    if (!addText.trim()) return
+    const entry = typeof items[0] === 'object' ? { who: 'Team', what: addText.trim() } : addText.trim()
+    onChange([...items, entry])
+    setAddText(''); setAdding(false)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item, i) => {
+        const text = item?.what ?? item
+        const who = item?.who
+        const isEditing = editIdx === i
+        return (
+          <div key={i} className="group flex items-start gap-2">
+            <span className={`bg-${tone}-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1`}>{i + 1}</span>
+            {isEditing ? (
+              <div className="flex-1 flex gap-1.5">
+                <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={2}
+                  className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" />
+                <button onClick={saveEdit} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700 shrink-0 h-8 mt-0.5">Save</button>
+                <button onClick={() => setEditIdx(null)} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-300 shrink-0 h-8 mt-0.5">Cancel</button>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-start gap-2">
+                <div className="flex-1 text-sm text-gray-700">
+                  {who && <span className="font-semibold text-indigo-900 text-xs mr-1">{who}:</span>}
+                  {text}
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 flex gap-1 shrink-0 transition-opacity">
+                  <button onClick={() => startEdit(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-blue-100 hover:text-blue-700" title="Edit">✏️</button>
+                  <button onClick={() => remove(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-red-100 hover:text-red-700" title="Remove">✕</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {adding ? (
+        <div className="flex gap-1.5 ml-7">
+          <textarea value={addText} onChange={e => setAddText(e.target.value)} rows={2} placeholder="Describe the action..."
+            className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" autoFocus />
+          <button onClick={addItem} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700 shrink-0 h-8 mt-0.5">Add</button>
+          <button onClick={() => { setAdding(false); setAddText('') }} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-300 shrink-0 h-8 mt-0.5">Cancel</button>
+        </div>
+      ) : (
+        <button onClick={() => setAdding(true)}
+          className="ml-7 text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 py-1">
+          <span className="text-base leading-none">+</span> Add action
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Reusable: Editable RACI Table ──────────────────────────────────────────
+function EditableRaciTable({ raci, onChange }) {
+  const [editIdx, setEditIdx] = useState(null)
+  const [editRow, setEditRow] = useState({})
+  const [adding, setAdding] = useState(false)
+  const [addRow, setAddRow] = useState({ activity: '', r: '', a: '', c: '', i: '' })
+
+  const startEdit = (i) => { setEditIdx(i); setEditRow({ ...raci[i] }) }
+  const saveEdit = () => { const next = [...raci]; next[editIdx] = editRow; onChange(next); setEditIdx(null) }
+  const remove = (i) => onChange(raci.filter((_, j) => j !== i))
+  const addItem = () => { if (!addRow.activity.trim()) return; onChange([...raci, addRow]); setAddRow({ activity: '', r: '', a: '', c: '', i: '' }); setAdding(false) }
+
+  const cellClass = "py-2 px-2 text-center text-xs"
+  const inputClass = "w-full text-xs border border-gray-300 rounded px-1.5 py-1 focus:ring-1 focus:ring-indigo-300"
+
+  return (
+    <div id="pb-raci" className="card">
+      <div className="card-header flex items-center justify-between">
+        <h3 className="font-bold text-gray-800">Roles & Responsibilities (RACI)</h3>
+        {!adding && <button onClick={() => setAdding(true)} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">+ Add row</button>}
+      </div>
+      <div className="card-body overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b-2 border-gray-200">
+              <th className="text-left py-2 pr-4 font-semibold text-gray-700">Activity</th>
+              <th className="text-center py-2 px-2 font-semibold text-blue-700">Responsible (R)</th>
+              <th className="text-center py-2 px-2 font-semibold text-purple-700">Accountable (A)</th>
+              <th className="text-center py-2 px-2 font-semibold text-emerald-700">Consulted (C)</th>
+              <th className="text-center py-2 px-2 font-semibold text-gray-500">Informed (I)</th>
+              <th className="w-16"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {raci.map((row, i) => editIdx === i ? (
+              <tr key={i} className="bg-indigo-50">
+                <td className="py-2 pr-2"><input value={editRow.activity} onChange={e => setEditRow({...editRow, activity: e.target.value})} className={inputClass} /></td>
+                <td className={cellClass}><input value={editRow.r} onChange={e => setEditRow({...editRow, r: e.target.value})} className={inputClass} /></td>
+                <td className={cellClass}><input value={editRow.a} onChange={e => setEditRow({...editRow, a: e.target.value})} className={inputClass} /></td>
+                <td className={cellClass}><input value={editRow.c} onChange={e => setEditRow({...editRow, c: e.target.value})} className={inputClass} /></td>
+                <td className={cellClass}><input value={editRow.i} onChange={e => setEditRow({...editRow, i: e.target.value})} className={inputClass} /></td>
+                <td className="py-2 px-1 flex gap-1">
+                  <button onClick={saveEdit} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700">Save</button>
+                  <button onClick={() => setEditIdx(null)} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300">Cancel</button>
+                </td>
+              </tr>
+            ) : (
+              <tr key={i} className={`group border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50' : ''}`}>
+                <td className="py-2.5 pr-4 font-medium text-gray-800">{row.activity}</td>
+                <td className="py-2.5 px-2 text-center text-blue-700 font-semibold">{row.r}</td>
+                <td className="py-2.5 px-2 text-center text-purple-700 font-semibold">{row.a}</td>
+                <td className="py-2.5 px-2 text-center text-emerald-700">{row.c}</td>
+                <td className="py-2.5 px-2 text-center text-gray-500">{row.i}</td>
+                <td className="py-2.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <button onClick={() => startEdit(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-blue-100 hover:text-blue-700" title="Edit">✏️</button>
+                  <button onClick={() => remove(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-red-100 hover:text-red-700" title="Remove">✕</button>
+                </td>
+              </tr>
+            ))}
+            {adding && (
+              <tr className="bg-indigo-50">
+                <td className="py-2 pr-2"><input value={addRow.activity} onChange={e => setAddRow({...addRow, activity: e.target.value})} className={inputClass} placeholder="Activity" autoFocus /></td>
+                <td className={cellClass}><input value={addRow.r} onChange={e => setAddRow({...addRow, r: e.target.value})} className={inputClass} placeholder="R" /></td>
+                <td className={cellClass}><input value={addRow.a} onChange={e => setAddRow({...addRow, a: e.target.value})} className={inputClass} placeholder="A" /></td>
+                <td className={cellClass}><input value={addRow.c} onChange={e => setAddRow({...addRow, c: e.target.value})} className={inputClass} placeholder="C" /></td>
+                <td className={cellClass}><input value={addRow.i} onChange={e => setAddRow({...addRow, i: e.target.value})} className={inputClass} placeholder="I" /></td>
+                <td className="py-2 px-1 flex gap-1">
+                  <button onClick={addItem} className="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700">Add</button>
+                  <button onClick={() => setAdding(false)} className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300">Cancel</button>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ─── Reusable: Editable Risk Register ───────────────────────────────────────
+function EditableRiskRegister({ risks, onChange }) {
+  const [editIdx, setEditIdx] = useState(null)
+  const [editRow, setEditRow] = useState({})
+  const [adding, setAdding] = useState(false)
+  const [addRow, setAddRow] = useState({ risk: '', severity: 'Medium', mitigation: '' })
+  const SEVERITY_COLOR = { Critical: 'sky', High: 'teal', Medium: 'emerald' }
+
+  const startEdit = (i) => { setEditIdx(i); setEditRow({ ...risks[i] }) }
+  const saveEdit = () => { const next = [...risks]; next[editIdx] = editRow; onChange(next); setEditIdx(null) }
+  const remove = (i) => onChange(risks.filter((_, j) => j !== i))
+  const addItem = () => { if (!addRow.risk.trim()) return; onChange([...risks, addRow]); setAddRow({ risk: '', severity: 'Medium', mitigation: '' }); setAdding(false) }
+
+  return (
+    <div id="pb-risks" className="card">
+      <div className="card-header flex items-center justify-between">
+        <h3 className="font-bold text-gray-800">Risk Register & Mitigations</h3>
+        {!adding && <button onClick={() => setAdding(true)} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">+ Add risk</button>}
+      </div>
+      <div className="card-body space-y-3">
+        {risks.map((r, i) => {
+          const col = SEVERITY_COLOR[r.severity] || 'gray'
+          return editIdx === i ? (
+            <div key={i} className="rounded-xl border p-4 bg-indigo-50 border-indigo-200 space-y-2">
+              <input value={editRow.risk} onChange={e => setEditRow({...editRow, risk: e.target.value})}
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 font-semibold" placeholder="Risk description" />
+              <div className="flex gap-2 items-center">
+                <label className="text-xs text-gray-600">Severity:</label>
+                <select value={editRow.severity} onChange={e => setEditRow({...editRow, severity: e.target.value})}
+                  className="text-xs border border-gray-300 rounded px-2 py-1">
+                  <option>Critical</option><option>High</option><option>Medium</option>
+                </select>
+              </div>
+              <textarea value={editRow.mitigation} onChange={e => setEditRow({...editRow, mitigation: e.target.value})}
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5" rows={2} placeholder="Mitigation strategy" />
+              <div className="flex gap-2">
+                <button onClick={saveEdit} className="text-xs bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700">Save</button>
+                <button onClick={() => setEditIdx(null)} className="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-300">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div key={i} className={`group rounded-xl border p-4 bg-${col}-50 border-${col}-200`}>
+              <div className="flex items-start gap-3">
+                <span className={`bg-${col}-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5`}>{r.severity}</span>
+                <div className="flex-1">
+                  <div className={`font-bold text-${col}-800 text-sm mb-1.5`}>{r.risk}</div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-semibold text-gray-600">Mitigation: </span>{r.mitigation}
+                  </div>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 flex gap-1 shrink-0 transition-opacity">
+                  <button onClick={() => startEdit(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-blue-100 hover:text-blue-700" title="Edit">✏️</button>
+                  <button onClick={() => remove(i)} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hover:bg-red-100 hover:text-red-700" title="Remove">✕</button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        {adding && (
+          <div className="rounded-xl border p-4 bg-indigo-50 border-indigo-200 space-y-2">
+            <input value={addRow.risk} onChange={e => setAddRow({...addRow, risk: e.target.value})}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 font-semibold" placeholder="Risk description" autoFocus />
+            <div className="flex gap-2 items-center">
+              <label className="text-xs text-gray-600">Severity:</label>
+              <select value={addRow.severity} onChange={e => setAddRow({...addRow, severity: e.target.value})}
+                className="text-xs border border-gray-300 rounded px-2 py-1">
+                <option>Critical</option><option>High</option><option>Medium</option>
+              </select>
+            </div>
+            <textarea value={addRow.mitigation} onChange={e => setAddRow({...addRow, mitigation: e.target.value})}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5" rows={2} placeholder="Mitigation strategy" />
+            <div className="flex gap-2">
+              <button onClick={addItem} className="text-xs bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700">Add</button>
+              <button onClick={() => setAdding(false)} className="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-300">Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Reusable: Coverage Section (used inside the Playbook) ───────────────────
 // Renders a collection of "change" items (tools, org, devsecops, aiops) with
 // expandable per-item cards that show what/how/example/successCriteria.
@@ -883,6 +1117,8 @@ export default function BusinessCasePage() {
   const [editForm, setEditForm]       = useState({})
   const [rmPhaseIdx, setRmPhaseIdx]   = useState(null)
   const [rmLane, setRmLane]           = useState('all')
+  const [editedRoadmap, setEditedRoadmap] = useState(() => JSON.parse(JSON.stringify(TRANSFORMATION_ROADMAP)))
+  const [editedTsSprintPlan, setEditedTsSprintPlan] = useState(null)
   const [optCPlatform, setOptCPlatform] = useState('stump') // 'homegrown' | 'stump' | 'bmad' | 'copilot_workspace'
   // Configured Target State drives the scenario + platform (instead of A/B/C).
   const [tsCfg, setTsCfg] = useState(null)
@@ -901,6 +1137,14 @@ export default function BusinessCasePage() {
         }).then(rm => {
           setTsSteps(rm.steps || [])
           setTsPlatformDetail(rm.platform_detail || null)
+          // Build editable sprint plan from platform phasing — split each focus into sentences as separate actions
+          if (rm.platform_detail?.playbook_phasing) {
+            setEditedTsSprintPlan(rm.platform_detail.playbook_phasing.map((p, i) => ({
+              sprint: `Phase ${i + 1}`, label: p.phase,
+              actions: p.focus.split(/\.\s+/).filter(s => s.trim()).map(s => ({ who: 'Team', what: s.trim().replace(/\.$/, '') + '.' })),
+              outcomes: [],
+            })))
+          }
           const tgtIdx = (rm.steps || []).findIndex(s => s.is_target)
           const idx = tgtIdx >= 0 ? tgtIdx : (rm.steps || []).length - 1
           setTsStepIdx(idx)
@@ -958,7 +1202,7 @@ export default function BusinessCasePage() {
 
   // Flatten all roadmap actions for current scenario into a table
   const getFlatActions = (scenario) => {
-    const rm = TRANSFORMATION_ROADMAP[scenario]
+    const rm = editedRoadmap[scenario]
     if (!rm) return []
     const rows = []
     rm.phases.forEach((ph, phIdx) => {
@@ -1049,9 +1293,9 @@ export default function BusinessCasePage() {
             ? `~${tsPlatformDetail.playbook_phasing[tsPlatformDetail.playbook_phasing.length - 1].phase.match(/\d+/g).pop()}+ weeks`
             : basePb.teamDuration
           : basePb.teamDuration,
-        sprintPlan: (tsPlatformDetail.playbook_phasing || []).map((p, i) => ({
+        sprintPlan: editedTsSprintPlan || (tsPlatformDetail.playbook_phasing || []).map((p, i) => ({
           sprint: `Phase ${i + 1}`, label: p.phase,
-          actions: [{ who: 'Team', what: p.focus }],
+          actions: p.focus.split(/\.\s+/).filter(s => s.trim()).map(s => ({ who: 'Team', what: s.trim().replace(/\.$/, '') + '.' })),
           outcomes: [],
         })),
       }
@@ -1862,12 +2106,23 @@ export default function BusinessCasePage() {
           {/* Sprint Plan */}
           <div className="card">
             <div className="card-header">
-              <h3 className="font-bold text-gray-800">Sprint-by-Sprint Implementation Plan</h3>
-              <p className="text-xs text-gray-500">Expand each sprint to see specific actions, owners, and expected outcomes</p>
+              <h3 className="font-bold text-gray-800">Phase-by-Phase Implementation Plan</h3>
+              <p className="text-xs text-gray-500">Expand each phase to see and edit specific actions, owners, and expected outcomes</p>
             </div>
             <div className="card-body space-y-3">
               {pb.sprintPlan.map((sp, idx) => {
                 const isOpen = openSprint === idx
+                const updateSprintActions = (newActions) => {
+                  if (tsCfg && editedTsSprintPlan) {
+                    setEditedTsSprintPlan(prev => prev.map((s, i) => i === idx ? { ...s, actions: newActions } : s))
+                  } else {
+                    setEditedPlaybooks(prev => {
+                      const next = JSON.parse(JSON.stringify(prev))
+                      next[activeScenario].sprintPlan[idx].actions = newActions
+                      return next
+                    })
+                  }
+                }
                 return (
                   <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
                     <button onClick={() => setOpenSprint(isOpen ? null : idx)}
@@ -1875,24 +2130,14 @@ export default function BusinessCasePage() {
                       <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shrink-0">{idx + 1}</div>
                       <div className="flex-1">
                         <div className="font-semibold text-gray-800">{sp.sprint} — {sp.label}</div>
-                        <div className="text-xs text-gray-500">{sp.actions.length} actions · click to expand</div>
+                        <div className="text-xs text-gray-500">{sp.actions.length} actions · click to expand · hover to edit</div>
                       </div>
                       <span className="text-gray-400">{isOpen ? '▲' : '▼'}</span>
                     </button>
                     {isOpen && (
                       <div className="border-t border-gray-100 px-5 pb-5 slide-down">
-                        <div className="mt-4 space-y-2.5">
-                          {sp.actions.map((a, ai) => (
-                            <div key={ai} className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm">
-                              <div className="flex items-start gap-3">
-                                <span className="bg-indigo-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">{ai + 1}</span>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-indigo-900 text-xs mb-1">{a.who}</div>
-                                  <div className="text-gray-700">{a.what}</div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="mt-4">
+                          <EditableActionList items={sp.actions} onChange={updateSprintActions} />
                         </div>
                         {sp.outcomes && sp.outcomes.length > 0 && (
                         <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -2014,33 +2259,21 @@ export default function BusinessCasePage() {
           )}
 
           {/* RACI */}
-          <div id="pb-raci" className="card">
-            <div className="card-header"><h3 className="font-bold text-gray-800">Roles & Responsibilities (RACI)</h3></div>
-            <div className="card-body overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-2 pr-4 font-semibold text-gray-700">Activity</th>
-                    <th className="text-center py-2 px-2 font-semibold text-blue-700">Responsible (R)</th>
-                    <th className="text-center py-2 px-2 font-semibold text-purple-700">Accountable (A)</th>
-                    <th className="text-center py-2 px-2 font-semibold text-emerald-700">Consulted (C)</th>
-                    <th className="text-center py-2 px-2 font-semibold text-gray-500">Informed (I)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pb.raci.map((row, i) => (
-                    <tr key={i} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50' : ''}`}>
-                      <td className="py-2.5 pr-4 font-medium text-gray-800">{row.activity}</td>
-                      <td className="py-2.5 px-2 text-center text-blue-700 font-semibold">{row.r}</td>
-                      <td className="py-2.5 px-2 text-center text-purple-700 font-semibold">{row.a}</td>
-                      <td className="py-2.5 px-2 text-center text-emerald-700">{row.c}</td>
-                      <td className="py-2.5 px-2 text-center text-gray-500">{row.i}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <EditableRaciTable raci={pb.raci} onChange={(newRaci) => {
+            setEditedPlaybooks(prev => {
+              const next = JSON.parse(JSON.stringify(prev))
+              next[activeScenario].raci = newRaci
+              return next
+            })
+          }} />
+
+          <EditableRiskRegister risks={pb.risks} onChange={(newRisks) => {
+            setEditedPlaybooks(prev => {
+              const next = JSON.parse(JSON.stringify(prev))
+              next[activeScenario].risks = newRisks
+              return next
+            })
+          }} />
 
           {/* Contextualise CTA */}
           <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 text-center">
@@ -2054,28 +2287,6 @@ export default function BusinessCasePage() {
             </Link>
           </div>
 
-          {/* Risk Register */}
-          <div id="pb-risks" className="card">
-            <div className="card-header"><h3 className="font-bold text-gray-800">Risk Register & Mitigations</h3></div>
-            <div className="card-body space-y-3">
-              {pb.risks.map((r, i) => {
-                const col = SEVERITY_COLOR[r.severity] || 'gray'
-                return (
-                  <div key={i} className={`rounded-xl border p-4 bg-${col}-50 border-${col}-200`}>
-                    <div className="flex items-start gap-3">
-                      <span className={`bg-${col}-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5`}>{r.severity}</span>
-                      <div className="flex-1">
-                        <div className={`font-bold text-${col}-800 text-sm mb-1.5`}>{r.risk}</div>
-                        <div className="text-sm text-gray-700">
-                          <span className="font-semibold text-gray-600">Mitigation: </span>{r.mitigation}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
         </div>
       )}
 
@@ -2132,7 +2343,7 @@ export default function BusinessCasePage() {
       {/* ── Investment ── */}
       {/* ── Roadmap ── */}
       {activeSection === 'roadmap' && (() => {
-        const rm = TRANSFORMATION_ROADMAP[activeScenario]
+        const rm = editedRoadmap[activeScenario]
         if (!rm) return null
         const lanes = Object.keys(LANE_STYLE)
         const openPhaseIdx = rmPhaseIdx
@@ -2221,22 +2432,22 @@ export default function BusinessCasePage() {
                   <div className="bg-white divide-y divide-gray-100">
                     {visibleLanes.map(lane => {
                       const items = ph[lane] || []
-                      if (items.length === 0) return null
+                      if (items.length === 0 && activeLane !== 'all' && activeLane !== lane) return null
                       const ls = LANE_STYLE[lane]
+                      const updateLaneActions = (newItems) => {
+                        setEditedRoadmap(prev => {
+                          const next = JSON.parse(JSON.stringify(prev))
+                          next[activeScenario].phases[openPhaseIdx][lane] = newItems
+                          return next
+                        })
+                      }
                       return (
                         <div key={lane} className={`px-5 py-4 ${ls.bg}`}>
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`${ls.badge} text-white text-xs font-bold px-3 py-0.5 rounded-full`}>{ls.label}</span>
-                            <span className="text-xs text-gray-500">{items.length} actions</span>
+                            <span className="text-xs text-gray-500">{items.length} actions · hover to edit</span>
                           </div>
-                          <div className="space-y-2">
-                            {items.map((item, ii) => (
-                              <div key={ii} className={`flex items-start gap-3 bg-white border ${ls.border} rounded-lg px-3 py-2.5`}>
-                                <span className={`${ls.badge} text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5`}>{ii + 1}</span>
-                                <span className="text-sm text-gray-700">{item}</span>
-                              </div>
-                            ))}
-                          </div>
+                          <EditableActionList items={items} onChange={updateLaneActions} tone={lane === 'org' ? 'blue' : lane === 'tools' ? 'purple' : lane === 'devsecops' ? 'red' : lane === 'aiops' ? 'indigo' : 'teal'} />
                         </div>
                       )
                     })}
@@ -2274,7 +2485,8 @@ export default function BusinessCasePage() {
                           {rm.phases.map((ph, pi) => {
                             const items = ph[lane] || []
                             return (
-                              <td key={pi} className={`px-2 py-2 border border-gray-200 ${ls.bg} align-top`}>
+                              <td key={pi} className={`px-2 py-2 border border-gray-200 ${ls.bg} align-top cursor-pointer hover:ring-2 hover:ring-inset hover:ring-indigo-300`}
+                                onClick={() => { setRmPhaseIdx(pi); setRmLane(lane) }} title="Click to edit actions">
                                 {items.length === 0 ? (
                                   <div className="text-gray-300 text-center py-2">—</div>
                                 ) : (
