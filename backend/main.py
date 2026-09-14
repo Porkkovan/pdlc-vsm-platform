@@ -58,7 +58,8 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="Multi-agent PDLC Value Stream Mapping platform — FastAPI + LangGraph",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 import os as _os

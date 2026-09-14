@@ -38,12 +38,14 @@ class CostModelOverridesUpdate(BaseModel):
     cost_model_overrides: dict
 
 
+@router.get("")
 @router.get("/")
 async def list_projects(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Project).order_by(Project.created_at.desc()))
     return [_to_dict(p) for p in result.scalars().all()]
 
 
+@router.post("")
 @router.post("/", status_code=201)
 async def create_project(data: ProjectCreate, db: AsyncSession = Depends(get_db)):
     project = Project(**data.model_dump(exclude_none=True))
