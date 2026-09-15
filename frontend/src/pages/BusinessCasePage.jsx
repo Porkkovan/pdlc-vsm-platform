@@ -3909,8 +3909,8 @@ export default function BusinessCasePage() {
                 </div>
                 <div className="flex gap-3 flex-wrap">
                   <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
-                    <div className="text-xs opacity-80">Humans</div>
-                    <div className="font-bold text-lg">{totalHumans}</div>
+                    <div className="text-xs opacity-80">FTE</div>
+                    <div className="font-bold text-lg">{totalHumans % 1 === 0 ? totalHumans : totalHumans.toFixed(2)}</div>
                   </div>
                   <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
                     <div className="text-xs opacity-80">AI Agents</div>
@@ -3959,7 +3959,7 @@ export default function BusinessCasePage() {
             {/* Roles Table */}
             <div className="card">
               <div className="card-header">
-                <h3 className="font-bold text-gray-800">Team Composition — {totalHumans} Humans + {totalAgents} Agents</h3>
+                <h3 className="font-bold text-gray-800">Team Composition — {totalHumans % 1 === 0 ? totalHumans : totalHumans.toFixed(2)} FTE + {totalAgents} Agents</h3>
                 <p className="text-xs text-gray-500">Click count to edit · Frontier roles absorb traditional roles shown below</p>
               </div>
               <div className="card-body">
@@ -3991,10 +3991,10 @@ export default function BusinessCasePage() {
                               )}
                             </td>
                             <td className="py-3 px-3 text-center">
-                              <input type="number" min={0} max={20}
-                                className="w-14 text-center border border-gray-300 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-violet-400"
+                              <input type="number" min={0} max={20} step={0.25}
+                                className="w-16 text-center border border-gray-300 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-violet-400"
                                 value={roleCount}
-                                onChange={e => setRolesOverrides(prev => ({ ...prev, [overrideKey]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                                onChange={e => setRolesOverrides(prev => ({ ...prev, [overrideKey]: Math.max(0, parseFloat(e.target.value) || 0) }))} />
                             </td>
                             <td className="py-3 px-3 text-center">
                               <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${typeBadge(role.type)}`}>
@@ -4075,7 +4075,7 @@ export default function BusinessCasePage() {
                   return (
                     <div key={role.id} className="border border-gray-200 rounded-xl overflow-hidden">
                       <div className="bg-gray-50 px-4 py-2.5 flex items-center justify-between">
-                        <div className="font-semibold text-gray-800 text-sm">{role.name} <span className="text-gray-400 font-normal">({roleCount}x)</span></div>
+                        <div className="font-semibold text-gray-800 text-sm">{role.name} <span className="text-gray-400 font-normal">({roleCount % 1 === 0 ? roleCount : roleCount.toFixed(2)} FTE)</span></div>
                         <div className="text-xs text-gray-500">{role.upskilling.reduce((h, u) => h + u.hours, 0)} hrs per person</div>
                       </div>
                       <div className="p-4">
@@ -4246,7 +4246,7 @@ export default function BusinessCasePage() {
 
               <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5">
                 <div className="font-bold text-emerald-800 text-base mb-1">Target: L{effectiveLevel} — {targetTeam.label}</div>
-                <div className="text-xs text-emerald-700 mb-3">{targetTeam.humans.reduce((s,h) => s + (costOverrides[`human_${h.role}_count_L${effectiveLevel}`] ?? h.count), 0)} humans · {agentCount} agents</div>
+                <div className="text-xs text-emerald-700 mb-3">{(() => { const t = targetTeam.humans.reduce((s,h) => s + (costOverrides[`human_${h.role}_count_L${effectiveLevel}`] ?? h.count), 0); return t % 1 === 0 ? t : t.toFixed(2) })()} FTE · {agentCount} agents</div>
                 <div className="text-3xl font-bold text-emerald-900">{fmt(targetHumanCost + agentAnnual)}<span className="text-sm font-normal text-emerald-600"> / year</span></div>
                 <div className="mt-3 space-y-1">
                   {targetTeam.humans.map(h => {
@@ -4254,7 +4254,7 @@ export default function BusinessCasePage() {
                     const ann = costOverrides[`human_${h.role}_cost`] ?? (AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.annual || 130000)
                     return (
                       <div key={h.role} className="flex justify-between text-xs text-emerald-700">
-                        <span>{h.role} x{cnt}</span>
+                        <span>{h.role} x{cnt % 1 === 0 ? cnt : cnt.toFixed(2)}</span>
                         <span className="font-semibold">{fmt(ann * cnt)}</span>
                       </div>
                     )
@@ -4293,10 +4293,10 @@ export default function BusinessCasePage() {
                         <tr key={h.role} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
                           <td className="py-2.5 pr-4 font-semibold text-gray-800">{AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.label || h.role}</td>
                           <td className="py-2.5 px-3 text-center">
-                            <input type="number" min={0} max={50}
+                            <input type="number" min={0} max={50} step={0.25}
                               className="w-16 text-center border border-gray-300 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
                               value={cnt}
-                              onChange={e => setCostOverrides(prev => ({ ...prev, [countKey]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                              onChange={e => setCostOverrides(prev => ({ ...prev, [countKey]: Math.max(0, parseFloat(e.target.value) || 0) }))} />
                           </td>
                           <td className="py-2.5 px-3 text-right">
                             <input type="number" step={5000} min={0}
