@@ -108,6 +108,264 @@ function enrichPlaybookActions(focusText, platformName, phaseName) {
   })
 }
 
+// ─── Roles & Skills Evolution by AI Maturity Level ──────────────────────────
+const ROLES_EVOLUTION = {
+  1: {
+    label: 'L1 — Assisted Prompting',
+    fluencyLevel: 'AI-Aware',
+    fluencyDesc: 'Basic understanding of AI concepts and terminology. Aware of how AI can enhance business processes.',
+    teamStructure: 'Traditional pyramid — 10 humans, manual execution, no agents',
+    roles: [
+      { id: 'dev', name: 'Developer', count: 3, type: 'traditional',
+        competencies: ['Full-stack development', 'Code review', 'Unit testing', 'Basic AI awareness'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' },
+                     { course: 'GitHub Copilot Basics', hours: 2, format: 'Workshop' }] },
+      { id: 'qa', name: 'QA Engineer', count: 2, type: 'traditional',
+        competencies: ['Manual testing', 'Test automation basics', 'Defect management'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' },
+                     { course: 'AI-Assisted Test Generation', hours: 3, format: 'Workshop' }] },
+      { id: 'devops', name: 'DevOps Engineer', count: 1, type: 'traditional',
+        competencies: ['CI/CD pipelines', 'Infrastructure as Code', 'Monitoring'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' },
+                     { course: 'AI Pipeline Tools Overview', hours: 4, format: 'Workshop' }] },
+      { id: 'ba', name: 'Business Analyst', count: 1, type: 'traditional',
+        competencies: ['Requirements gathering', 'Story writing', 'Stakeholder management'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' }] },
+      { id: 'sm', name: 'Scrum Master', count: 1, type: 'traditional',
+        competencies: ['Agile ceremonies', 'Sprint planning', 'Impediment removal'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' }] },
+      { id: 'arch', name: 'Solution Architect', count: 1, type: 'traditional',
+        competencies: ['Solution design', 'Technology selection', 'Architecture governance'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' },
+                     { course: 'AI Architecture Patterns', hours: 4, format: 'Workshop' }] },
+      { id: 'support', name: 'App Support Analyst', count: 1, type: 'traditional',
+        competencies: ['Incident triage', 'L1/L2 resolution', 'SLA management'],
+        upskilling: [{ course: 'AI Fundamentals & Awareness', hours: 4, format: 'Async online' }] },
+    ],
+    agents: { count: 0, types: [], description: 'No AI agents — humans do all work; AI limited to basic IDE suggestions' },
+  },
+  2: {
+    label: 'L2 — Agent Co-pilots',
+    fluencyLevel: 'AI-Practitioner',
+    fluencyDesc: 'Moderate proficiency applying AI tools and techniques to everyday delivery tasks. Identifies specific use cases where AI adds value.',
+    teamStructure: 'Augmented pyramid — 9 humans with AI co-pilot tools across most phases',
+    roles: [
+      { id: 'dev', name: 'Developer', count: 3, type: 'traditional',
+        competencies: ['Full-stack development', 'AI-assisted coding (Copilot)', 'Prompt engineering basics', 'AI output review'],
+        upskilling: [{ course: 'GitHub Copilot Advanced', hours: 8, format: 'Workshop' },
+                     { course: 'Prompt Engineering for Developers', hours: 6, format: 'Online + Lab' },
+                     { course: 'AI Code Review Best Practices', hours: 4, format: 'Workshop' }] },
+      { id: 'qa', name: 'QA Engineer', count: 2, type: 'traditional',
+        competencies: ['AI-assisted test generation', 'Synthetic data management', 'AI output validation'],
+        upskilling: [{ course: 'AI Test Generation Tools', hours: 8, format: 'Workshop' },
+                     { course: 'DataGen & Synthetic Data', hours: 6, format: 'Online + Lab' }] },
+      { id: 'devops', name: 'DevOps Engineer', count: 1, type: 'traditional',
+        competencies: ['AI-enhanced CI/CD', 'ML-based SAST integration', 'Agent monitoring basics'],
+        upskilling: [{ course: 'AI Pipeline Integration', hours: 8, format: 'Workshop' },
+                     { course: 'Agent Monitoring & Observability', hours: 6, format: 'Online' }] },
+      { id: 'ba', name: 'Business Analyst', count: 1, type: 'traditional',
+        competencies: ['AI-assisted requirements', 'Intent writing for FeatureGen', 'AI output review'],
+        upskilling: [{ course: 'FeatureGen Intent Writing', hours: 4, format: 'Workshop' },
+                     { course: 'AI Story Review', hours: 2, format: 'Workshop' }] },
+      { id: 'sm', name: 'Scrum Master', count: 1, type: 'evolving',
+        competencies: ['AI-augmented ceremonies', 'AI velocity forecasting', 'Team AI adoption coaching'],
+        upskilling: [{ course: 'AI Metrics & Dashboards', hours: 4, format: 'Workshop' },
+                     { course: 'AI Ceremonies Guide', hours: 2, format: 'Online' }] },
+      { id: 'arch', name: 'Solution Architect', count: 1, type: 'traditional',
+        competencies: ['AI solution architecture', 'Agent design patterns', 'AI governance basics'],
+        upskilling: [{ course: 'Agent Architecture Patterns', hours: 8, format: 'Workshop' },
+                     { course: 'AI Governance Fundamentals', hours: 4, format: 'Online' }] },
+    ],
+    agents: { count: 5, types: ['Code Assistant', 'Test Assistant', 'CI/CD Assistant', 'Doc Generator', 'Review Assistant'],
+              description: 'AI co-pilots assist in 5 phases — all outputs reviewed by humans before acceptance' },
+  },
+  3: {
+    label: 'L3 — Supervised Independent',
+    fluencyLevel: 'AI-Advanced User',
+    fluencyDesc: 'Skilled in leveraging AI tools and platforms to solve complex problems. Guides implementation of AI in workflows.',
+    teamStructure: 'Inverted pyramid emerging — 6 Frontier humans + 12 independent agents',
+    roles: [
+      { id: 'fae', name: 'Frontier AI Engineer (FAE)', count: 2, type: 'frontier',
+        absorbs: ['Developer', 'QA Engineer', 'DevOps Engineer'],
+        competencies: ['Requirements Extraction', 'Solution Architecture', 'Full-Stack Development', 'Data Pipeline Engineering',
+                       'Quality & Compliance', 'CI/CD & DevSecOps', 'AI Prompt Orchestration', 'Stakeholder Engagement'],
+        toolchain: ['GitHub Copilot', 'Claude', 'GiGi', 'Databricks Ginie'],
+        typicalDay: { 'Judgment': 30, 'AI Orchestration': 25, 'Code Review': 20, 'Stakeholders': 15, 'Compliance': 10 },
+        upskilling: [{ course: 'FAE Certification Program', hours: 80, format: '4-week intensive' },
+                     { course: 'Multi-Agent Orchestration', hours: 24, format: 'Workshop series' },
+                     { course: 'Advanced Prompt Engineering', hours: 16, format: 'Online + Lab' }] },
+      { id: 'fbo', name: 'Frontier Business Operator (FBO)', count: 1, type: 'frontier',
+        absorbs: ['Project Manager', 'Scrum Master', 'Business Analyst'],
+        competencies: ['Backlog Ownership', 'Stakeholder Management', 'AI Output Validation', 'Domain Translation',
+                       'Change Management', 'Value Realization', 'Sprint Analytics', 'Compliance'],
+        toolchain: ['Lovable', 'Copilot for Office', 'Power BI + Copilot'],
+        typicalDay: { 'Stakeholders': 35, 'AI Validation': 25, 'Backlog Mgmt': 20, 'Metrics': 10, 'Change': 10 },
+        upskilling: [{ course: 'FBO Certification Program', hours: 60, format: '3-week intensive' },
+                     { course: 'AI Output Validation & Governance', hours: 16, format: 'Workshop' },
+                     { course: 'Change Management for AI Transformation', hours: 12, format: 'Online' }] },
+      { id: 'fsa', name: 'Frontier Super Architect (FSA)', count: 1, type: 'frontier',
+        absorbs: ['Product Owner', 'Solution Architect'],
+        competencies: ['Domain / Tribe Leadership', 'AI Strategy', 'Architecture Governance', 'Cross-functional Orchestration',
+                       'Regulated Domain Expertise', 'Platform Mastery + AI Fluency'],
+        typicalDay: { 'Architecture': 30, 'Domain Governance': 25, 'AI Strategy': 20, 'Stakeholders': 15, 'Compliance': 10 },
+        upskilling: [{ course: 'FSA Certification Program', hours: 60, format: '3-week intensive' },
+                     { course: 'Agentic Architecture Mastery', hours: 24, format: 'Workshop series' }] },
+      { id: 'fpe', name: 'Frontier Platform Engineer (FPE)', count: 1, type: 'frontier',
+        absorbs: ['Platform Engineering', 'Platform Ops Engineer'],
+        competencies: ['Platform Configuration', 'Platform Standardisation', 'Ops', 'Incident Diagnosis', 'Remediation'],
+        upskilling: [{ course: 'FPE Certification Program', hours: 40, format: '2-week intensive' },
+                     { course: 'AI Platform Operations', hours: 16, format: 'Workshop' }] },
+      { id: 'fse', name: 'Frontier Support Engineer (FSE)', count: 1, type: 'frontier',
+        absorbs: ['App Support Analyst', 'L2/L3 Support Engineer'],
+        competencies: ['Reliability', 'Platform Ops', 'Incident Diagnosis', 'Remediation', 'Service Optimisation', 'Observability'],
+        upskilling: [{ course: 'FSE Certification Program', hours: 40, format: '2-week intensive' },
+                     { course: 'AIOps & Self-Healing Systems', hours: 16, format: 'Workshop' }] },
+    ],
+    agents: { count: 12, types: ['Code Generator', 'Code Reviewer', 'QA Orchestrator', 'DataGen', 'Release Gate',
+                                  'CI/CD Agent', 'SAST Agent', 'Monitor Agent', 'FeatureGen', 'StoryGen',
+                                  'Doc Generator', 'Compliance Agent'],
+              description: 'Independent agents handle standard cases; humans review exceptions and quality gates' },
+  },
+  4: {
+    label: 'L4 — Orchestrated Agents',
+    fluencyLevel: 'AI-Champion',
+    fluencyDesc: 'Mastery in integrating AI strategically across business units. Drives innovation and shapes enterprise-wide AI transformation.',
+    teamStructure: 'Inverted pyramid — 4-5 Frontier humans govern 18 orchestrated agents',
+    roles: [
+      { id: 'fae', name: 'Frontier AI Engineer (FAE)', count: 2, type: 'frontier',
+        absorbs: ['Developer', 'QA Engineer', 'DevOps Engineer', 'BA', 'Solution Architect'],
+        competencies: ['Requirements Extraction', 'Solution Architecture', 'Full-Stack Development', 'Data Pipeline Engineering',
+                       'Quality & Compliance', 'CI/CD & DevSecOps', 'AI Prompt Orchestration', 'Stakeholder Engagement'],
+        toolchain: ['GitHub Copilot', 'Claude', 'GiGi', 'Databricks Ginie', 'C3.ai', 'n8n', 'th!nk.ai', 'Glean.ai'],
+        typicalDay: { 'Judgment': 30, 'AI Orchestration': 25, 'Code Review': 20, 'Stakeholders': 15, 'Compliance': 10 },
+        upskilling: [{ course: 'Advanced Multi-Agent Orchestration', hours: 40, format: 'Intensive workshop' },
+                     { course: 'Agent Fleet Management', hours: 24, format: 'Online + Lab' }] },
+      { id: 'fbo', name: 'Frontier Business Operator (FBO)', count: 1, type: 'frontier',
+        absorbs: ['Project Manager', 'Scrum Master', 'Delivery Lead', 'Release Train Engineer', 'Business Analyst'],
+        competencies: ['Backlog Ownership', 'Stakeholder Management', 'AI Output Validation', 'Domain Translation',
+                       'Change Management', 'Value Realization', 'Sprint Analytics', 'Compliance'],
+        toolchain: ['Lovable', 'Copilot for Office', 'Power BI + Copilot', 'Writer.AI'],
+        typicalDay: { 'Stakeholders': 35, 'AI Validation': 25, 'Backlog Mgmt': 20, 'Metrics': 10, 'Change': 10 },
+        upskilling: [{ course: 'Enterprise AI Governance', hours: 24, format: 'Workshop' },
+                     { course: 'Outcome-Based Product Management', hours: 16, format: 'Online' }] },
+      { id: 'fsa', name: 'Frontier Super Architect (FSA)', count: 1, type: 'frontier',
+        absorbs: ['Product Owner', 'Solution Architect'],
+        competencies: ['Domain / Tribe Leadership', 'AI Strategy', 'Architecture Governance', 'Cross-functional Orchestration',
+                       'Regulated Domain Expertise', 'Platform Mastery + AI Fluency'],
+        typicalDay: { 'Architecture': 30, 'Domain Governance': 25, 'AI Strategy': 20, 'Stakeholders': 15, 'Compliance': 10 },
+        upskilling: [{ course: 'Enterprise AI Architecture', hours: 32, format: 'Workshop series' }] },
+      { id: 'fse', name: 'Frontier Support Engineer (FSE)', count: 1, type: 'frontier',
+        absorbs: ['App Support Analyst', 'L2/L3 Support Engineer', 'Platform Ops Engineer'],
+        competencies: ['Reliability', 'Platform Ops', 'Incident Diagnosis', 'Remediation', 'Service Optimisation', 'Observability'],
+        upskilling: [{ course: 'Advanced AIOps & Autonomous Operations', hours: 24, format: 'Workshop' }] },
+    ],
+    agents: { count: 18, types: ['Code Generator', 'Code Reviewer', 'QA Orchestrator', 'DataGen', 'Release Gate',
+                                  'CI/CD Agent', 'SAST Agent', 'DAST Agent', 'Monitor Agent', 'Triage Agent',
+                                  'FeatureGen', 'StoryGen', 'Doc Generator', 'Compliance Agent', 'MRM Agent',
+                                  'Secure-by-Design', 'Governance Controller', 'Deployment Agent'],
+              description: 'Multi-agent orchestration end-to-end; humans provide oversight and handle escalations' },
+  },
+  5: {
+    label: 'L5 — Autonomous ADLC',
+    fluencyLevel: 'AI-Champion+',
+    fluencyDesc: 'Beyond mastery — shapes AI strategy at enterprise level. Defines how AI and humans co-evolve.',
+    teamStructure: 'Fully inverted — 3 humans govern 21 autonomous agents across full PDLC',
+    roles: [
+      { id: 'pd', name: 'Product Definer (evolved FBO)', count: 1, type: 'frontier',
+        absorbs: ['All business / operations roles'],
+        competencies: ['Outcome Definition', 'Strategic Prioritisation', 'AI Fleet Governance', 'Business Value Realisation',
+                       'Stakeholder Alignment', 'Compliance Oversight'],
+        typicalDay: { 'Outcome Briefs': 30, 'Agent Output Review': 25, 'Stakeholders': 25, 'Governance': 20 },
+        upskilling: [{ course: 'Product Definer Mastery', hours: 40, format: '2-week intensive' },
+                     { course: 'AI Fleet Governance for Leaders', hours: 16, format: 'Online' }] },
+      { id: 'pb', name: 'Product Builder (evolved FAE)', count: 1, type: 'frontier',
+        absorbs: ['All technical / engineering roles'],
+        competencies: ['Agent Orchestration Mastery', 'Exception Handling', 'Agent Performance Tuning',
+                       'Quality Gate Management', 'Platform Reliability', 'Continuous Improvement'],
+        typicalDay: { 'Agent Ops Dashboard': 30, 'Exception Queue': 25, 'Tuning & Improvement': 25, 'Compliance': 20 },
+        upskilling: [{ course: 'Product Builder Mastery', hours: 40, format: '2-week intensive' },
+                     { course: 'Agent Fleet Operations', hours: 24, format: 'Workshop' }] },
+      { id: 'sa', name: 'Super Architect (evolved FSA)', count: 1, type: 'frontier',
+        absorbs: ['Architecture + Domain governance'],
+        competencies: ['Enterprise AI Architecture', 'Domain Orchestration', 'Cross-platform Governance',
+                       'Risk Management', 'Innovation Pipeline', 'Regulatory Strategy'],
+        typicalDay: { 'Architecture': 30, 'Domain Governance': 25, 'Innovation': 20, 'Regulatory': 15, 'Coaching': 10 },
+        upskilling: [{ course: 'Enterprise Agentic Architecture', hours: 32, format: 'Workshop series' }] },
+    ],
+    agents: { count: 21, types: ['All 21 PDLC agents operating autonomously'],
+              description: 'Full autonomous ADLC — agents coordinate end-to-end; humans govern at strategic level only' },
+  },
+}
+
+// ─── Agent Cost Estimator Data ──────────────────────────────────────────────
+const AGENT_COST_ESTIMATOR = {
+  humanRoleCosts: {
+    'Developer':        { annual: 130000, label: 'Developer' },
+    'QA Engineer':      { annual: 110000, label: 'QA Engineer' },
+    'DevOps Engineer':  { annual: 140000, label: 'DevOps Engineer' },
+    'Business Analyst': { annual: 105000, label: 'Business Analyst' },
+    'Scrum Master':     { annual: 115000, label: 'Scrum Master' },
+    'Architect':        { annual: 170000, label: 'Solution Architect' },
+    'Product Owner':    { annual: 140000, label: 'Product Owner' },
+    'Support Analyst':  { annual: 90000,  label: 'App Support Analyst' },
+    'L2/L3 Support':    { annual: 120000, label: 'L2/L3 Support Engineer' },
+    'Platform Ops':     { annual: 135000, label: 'Platform Ops Engineer' },
+    'FAE':              { annual: 185000, label: 'Frontier AI Engineer' },
+    'FBO':              { annual: 155000, label: 'Frontier Business Operator' },
+    'FSA':              { annual: 195000, label: 'Frontier Super Architect' },
+    'FPE':              { annual: 160000, label: 'Frontier Platform Engineer' },
+    'FSE':              { annual: 145000, label: 'Frontier Support Engineer' },
+    'Product Definer (evolved FBO)': { annual: 175000, label: 'Product Definer' },
+    'Product Builder (evolved FAE)': { annual: 195000, label: 'Product Builder' },
+    'Super Architect (evolved FSA)': { annual: 210000, label: 'Super Architect' },
+  },
+  agentCostsByPlatform: {
+    homegrown:          { perAgentMonth: 2800, infraMonth: 8000, llmTokenMonth: 12000, label: 'Homegrown / Custom Build' },
+    stump:              { perAgentMonth: 1200, infraMonth: 0,    llmTokenMonth: 0,     subscriptionMonth: 15000, label: 'STUMP ADLC Platform' },
+    bmad:               { perAgentMonth: 2200, infraMonth: 5000, llmTokenMonth: 10000, label: 'BMAD Framework' },
+    copilot_workspace:  { perAgentMonth: 1800, infraMonth: 3000, llmTokenMonth: 8000,  label: 'Copilot Workspace' },
+    devin:              { perAgentMonth: 1500, infraMonth: 2000, llmTokenMonth: 6000,  subscriptionMonth: 10000, label: 'Cognition Devin' },
+    cursor:             { perAgentMonth: 1600, infraMonth: 2500, llmTokenMonth: 7000,  label: 'Cursor' },
+    flowsource:         { perAgentMonth: 1400, infraMonth: 2000, llmTokenMonth: 5000,  subscriptionMonth: 8000, label: 'FlowSource' },
+    baxter:             { perAgentMonth: 2000, infraMonth: 4000, llmTokenMonth: 9000,  label: 'Baxter' },
+  },
+  teamByLevel: {
+    1: { humans: [
+      { role: 'Developer', count: 3 }, { role: 'QA Engineer', count: 2 },
+      { role: 'DevOps Engineer', count: 1 }, { role: 'Business Analyst', count: 1 },
+      { role: 'Scrum Master', count: 1 }, { role: 'Architect', count: 1 },
+      { role: 'Support Analyst', count: 1 }
+    ], agents: 0, label: 'Traditional Team (A0)' },
+    2: { humans: [
+      { role: 'Developer', count: 3 }, { role: 'QA Engineer', count: 2 },
+      { role: 'DevOps Engineer', count: 1 }, { role: 'Business Analyst', count: 1 },
+      { role: 'Scrum Master', count: 1 }, { role: 'Architect', count: 1 }
+    ], agents: 5, label: 'AI-Augmented Team' },
+    3: { humans: [
+      { role: 'FAE', count: 2 }, { role: 'FBO', count: 1 },
+      { role: 'FSA', count: 1 }, { role: 'FSE', count: 1 },
+      { role: 'FPE', count: 1 }
+    ], agents: 12, label: 'Frontier Team (Emerging)' },
+    4: { humans: [
+      { role: 'FAE', count: 2 }, { role: 'FBO', count: 1 },
+      { role: 'FSA', count: 1 }, { role: 'FSE', count: 1 }
+    ], agents: 18, label: 'Frontier Team (A3)' },
+    5: { humans: [
+      { role: 'Product Definer (evolved FBO)', count: 1 }, { role: 'Product Builder (evolved FAE)', count: 1 },
+      { role: 'Super Architect (evolved FSA)', count: 1 }
+    ], agents: 21, label: 'Autonomous Team' },
+  },
+  transformationCostByLevel: {
+    1: { training: 25000,  tooling: 50000,   changeManagement: 15000, hiring: 0,      total: 90000 },
+    2: { training: 60000,  tooling: 150000,  changeManagement: 40000, hiring: 0,      total: 250000 },
+    3: { training: 120000, tooling: 350000,  changeManagement: 100000, hiring: 200000, total: 770000 },
+    4: { training: 200000, tooling: 600000,  changeManagement: 200000, hiring: 350000, total: 1350000 },
+    5: { training: 250000, tooling: 900000,  changeManagement: 300000, hiring: 500000, total: 1950000 },
+  },
+}
+
+const SCENARIO_TO_LEVEL = { 'option-a': 2, 'option-b': 3, 'option-c': 4 }
+
 // ─── Business Case Data ──────────────────────────────────────────────────────
 const BUSINESS_CASES = {
   'option-a': {
@@ -880,7 +1138,9 @@ const SECTIONS = [
   { id: 'tools',     label: 'Tools' },
   { id: 'devsecops', label: '🔒 DevSecOps' },
   { id: 'aiops',     label: '🤖 AI Ops' },
-  { id: 'product',   label: 'Product-Centric' }
+  { id: 'product',   label: 'Product-Centric' },
+  { id: 'roles',     label: '👥 Roles & Skills' },
+  { id: 'costestimator', label: '💵 Cost Estimator' },
 ]
 
 const OPTION_META = {
@@ -1325,6 +1585,8 @@ export default function BusinessCasePage() {
   const [addingTeam, setAddingTeam] = useState(false)
   const [newTeamName, setNewTeamName] = useState('')
   const [selectedTeam, setSelectedTeam] = useState(null)
+  const [costOverrides, setCostOverrides] = useState({})
+  const [rolesOverrides, setRolesOverrides] = useState({})
 
   const saveTracker = (next) => {
     setTrackerData(next)
@@ -3622,6 +3884,684 @@ export default function BusinessCasePage() {
           <div className="card-body"><ul className="space-y-3">{bc.productCentricChanges.map((c, i) => (<li key={i} className="flex items-start gap-3 p-4 bg-teal-50 rounded-lg border border-teal-200"><span className="text-teal-700">🎯</span><span className="text-sm text-gray-700">{c}</span></li>))}</ul></div>
         </div>
       )}
+
+      {/* ── Roles & Skills Evolution ── */}
+      {activeSection === 'roles' && (() => {
+        const effectiveLevel = activeStep?.level || SCENARIO_TO_LEVEL[activeScenario] || 2
+        const evo = ROLES_EVOLUTION[effectiveLevel]
+        if (!evo) return null
+        const totalHumans = evo.roles.reduce((s, r) => s + (rolesOverrides[`${effectiveLevel}_${r.id}_count`] ?? r.count), 0)
+        const totalAgents = evo.agents.count
+        const totalUpskillHrs = evo.roles.reduce((s, r) => s + r.upskilling.reduce((h, u) => h + u.hours, 0) * (rolesOverrides[`${effectiveLevel}_${r.id}_count`] ?? r.count), 0)
+        const typeBadge = (t) => t === 'frontier' ? 'bg-purple-100 text-purple-800 border-purple-300' : t === 'evolving' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'
+        return (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl p-6 text-white">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="font-bold text-xl mb-1">Roles & Skills Evolution — {evo.label}</h3>
+                  <p className="text-sm opacity-90">{evo.teamStructure}</p>
+                  <p className="text-xs opacity-75 mt-1">
+                    Based on the Frontier Workforce Model — from traditional pyramid to AI-native inverted structure
+                    {tsCfg && <span className="ml-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">Target State Driven</span>}
+                  </p>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">Humans</div>
+                    <div className="font-bold text-lg">{totalHumans}</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">AI Agents</div>
+                    <div className="font-bold text-lg">{totalAgents}</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">AI Fluency</div>
+                    <div className="font-bold text-sm">{evo.fluencyLevel}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Level selector strip */}
+            <div className="flex gap-1">
+              {[1,2,3,4,5].map(lv => {
+                const lvEvo = ROLES_EVOLUTION[lv]
+                const isActive = lv === effectiveLevel
+                return (
+                  <button key={lv} disabled
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-center transition-all ${isActive ? 'bg-violet-600 text-white shadow-md' : 'bg-gray-100 text-gray-500'}`}>
+                    L{lv} — {lvEvo.fluencyLevel}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* AI Fluency Level */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+              <div className="flex items-start gap-3">
+                <div className="text-3xl">🎓</div>
+                <div>
+                  <div className="font-bold text-amber-900 text-base">AI Fluency: {evo.fluencyLevel}</div>
+                  <p className="text-sm text-amber-800 mt-1">{evo.fluencyDesc}</p>
+                  <div className="mt-3 flex gap-2">
+                    {['AI-Aware', 'AI-Practitioner', 'AI-Advanced User', 'AI-Champion', 'AI-Champion+'].map((fl, i) => (
+                      <div key={fl} className={`text-[10px] px-2 py-1 rounded-full font-semibold border ${fl === evo.fluencyLevel ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-gray-400 border-gray-200'}`}>
+                        L{i+1}: {fl}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Roles Table */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">Team Composition — {totalHumans} Humans + {totalAgents} Agents</h3>
+                <p className="text-xs text-gray-500">Click count to edit · Frontier roles absorb traditional roles shown below</p>
+              </div>
+              <div className="card-body">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200">
+                        <th className="text-left py-2.5 pr-4 text-xs font-semibold text-gray-600 uppercase">Role</th>
+                        <th className="text-center py-2.5 px-3 text-xs font-semibold text-gray-600 uppercase w-16">Count</th>
+                        <th className="text-center py-2.5 px-3 text-xs font-semibold text-gray-600 uppercase w-24">Type</th>
+                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-600 uppercase">Competencies</th>
+                        {effectiveLevel >= 3 && <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-600 uppercase">Absorbs</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evo.roles.map((role, ri) => {
+                        const overrideKey = `${effectiveLevel}_${role.id}_count`
+                        const roleCount = rolesOverrides[overrideKey] ?? role.count
+                        return (
+                          <tr key={role.id} className={`border-b border-gray-100 ${ri % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                            <td className="py-3 pr-4">
+                              <div className="font-semibold text-gray-800">{role.name}</div>
+                              {role.toolchain && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {role.toolchain.map(t => (
+                                    <span key={t} className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">{t}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <input type="number" min={0} max={20}
+                                className="w-14 text-center border border-gray-300 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-violet-400"
+                                value={roleCount}
+                                onChange={e => setRolesOverrides(prev => ({ ...prev, [overrideKey]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${typeBadge(role.type)}`}>
+                                {role.type === 'frontier' ? 'Frontier' : role.type === 'evolving' ? 'Evolving' : 'Traditional'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="flex flex-wrap gap-1">
+                                {role.competencies.map(c => (
+                                  <span key={c} className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">{c}</span>
+                                ))}
+                              </div>
+                            </td>
+                            {effectiveLevel >= 3 && (
+                              <td className="py-3 px-3">
+                                {role.absorbs ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {role.absorbs.map(a => (
+                                      <span key={a} className="text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full line-through">{a}</span>
+                                    ))}
+                                  </div>
+                                ) : <span className="text-xs text-gray-400">—</span>}
+                              </td>
+                            )}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Typical Day (for frontier roles with typicalDay) */}
+            {evo.roles.some(r => r.typicalDay) && (
+              <div className="card">
+                <div className="card-header">
+                  <h3 className="font-bold text-gray-800">Typical Day — Time Allocation</h3>
+                  <p className="text-xs text-gray-500">How frontier roles spend their time at L{effectiveLevel}</p>
+                </div>
+                <div className="card-body">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {evo.roles.filter(r => r.typicalDay).map(role => (
+                      <div key={role.id} className="bg-gradient-to-b from-violet-50 to-white border border-violet-200 rounded-xl p-4">
+                        <div className="font-semibold text-violet-900 text-sm mb-3">{role.name}</div>
+                        <div className="space-y-2">
+                          {Object.entries(role.typicalDay).map(([activity, pct]) => (
+                            <div key={activity} className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <div className="flex justify-between text-xs mb-0.5">
+                                  <span className="text-gray-700">{activity}</span>
+                                  <span className="font-bold text-violet-700">{pct}%</span>
+                                </div>
+                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Upskilling / Learning Plan */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">Upskilling & Learning Plan</h3>
+                <p className="text-xs text-gray-500">Total: ~{totalUpskillHrs.toLocaleString()} person-hours across {totalHumans} team members</p>
+              </div>
+              <div className="card-body space-y-4">
+                {evo.roles.map(role => {
+                  const roleCount = rolesOverrides[`${effectiveLevel}_${role.id}_count`] ?? role.count
+                  if (roleCount === 0) return null
+                  return (
+                    <div key={role.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-2.5 flex items-center justify-between">
+                        <div className="font-semibold text-gray-800 text-sm">{role.name} <span className="text-gray-400 font-normal">({roleCount}x)</span></div>
+                        <div className="text-xs text-gray-500">{role.upskilling.reduce((h, u) => h + u.hours, 0)} hrs per person</div>
+                      </div>
+                      <div className="p-4">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-100">
+                              <th className="text-left py-1.5 pr-4 text-xs font-semibold text-gray-500">Course</th>
+                              <th className="text-center py-1.5 px-3 text-xs font-semibold text-gray-500 w-20">Hours</th>
+                              <th className="text-left py-1.5 px-3 text-xs font-semibold text-gray-500">Format</th>
+                              <th className="text-right py-1.5 pl-3 text-xs font-semibold text-gray-500 w-28">Total Hrs</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {role.upskilling.map((u, ui) => (
+                              <tr key={ui} className="border-b border-gray-50">
+                                <td className="py-2 pr-4 text-gray-700">{u.course}</td>
+                                <td className="py-2 px-3 text-center font-semibold text-violet-700">{u.hours}</td>
+                                <td className="py-2 px-3"><span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">{u.format}</span></td>
+                                <td className="py-2 pl-3 text-right font-semibold text-gray-600">{u.hours * roleCount}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Agent Layer */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
+              <div className="flex items-start gap-3">
+                <div className="text-3xl">🤖</div>
+                <div className="flex-1">
+                  <div className="font-bold text-lg mb-1">AI Agent Layer — {totalAgents} Agents</div>
+                  <p className="text-sm opacity-80 mb-3">{evo.agents.description}</p>
+                  {evo.agents.types.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {evo.agents.types.map(t => (
+                        <span key={t} className="text-[10px] bg-white/10 text-white/90 px-2.5 py-1 rounded-full border border-white/20">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Level comparison mini-strip */}
+            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5">
+              <div className="font-bold text-violet-900 text-sm mb-3">Team Evolution: L1 to L5</div>
+              <div className="grid grid-cols-5 gap-2">
+                {[1,2,3,4,5].map(lv => {
+                  const lv2 = ROLES_EVOLUTION[lv]
+                  const lvHumans = lv2.roles.reduce((s, r) => s + r.count, 0)
+                  const isActive = lv === effectiveLevel
+                  return (
+                    <div key={lv} className={`rounded-xl p-3 text-center border-2 ${isActive ? 'border-violet-500 bg-white shadow-md' : 'border-transparent bg-white/60'}`}>
+                      <div className={`text-xs font-bold ${isActive ? 'text-violet-700' : 'text-gray-500'}`}>L{lv}</div>
+                      <div className="flex justify-center gap-1 mt-2">
+                        <div>
+                          <div className="text-lg font-bold text-gray-800">{lvHumans}</div>
+                          <div className="text-[9px] text-gray-500">humans</div>
+                        </div>
+                        <div className="text-gray-300 self-center">+</div>
+                        <div>
+                          <div className="text-lg font-bold text-emerald-600">{lv2.agents.count}</div>
+                          <div className="text-[9px] text-gray-500">agents</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Cost Estimator ── */}
+      {activeSection === 'costestimator' && (() => {
+        const effectiveLevel = activeStep?.level || SCENARIO_TO_LEVEL[activeScenario] || 2
+        const platformId = tsCfg?.platform || optCPlatform || 'stump'
+        const platformCosts = AGENT_COST_ESTIMATOR.agentCostsByPlatform[platformId] || AGENT_COST_ESTIMATOR.agentCostsByPlatform.stump
+        const baselineTeam = AGENT_COST_ESTIMATOR.teamByLevel[1]
+        const targetTeam = AGENT_COST_ESTIMATOR.teamByLevel[effectiveLevel]
+        const xformCost = AGENT_COST_ESTIMATOR.transformationCostByLevel[effectiveLevel]
+
+        const getHumanCost = (teamDef) => teamDef.humans.reduce((total, h) => {
+          const overrideKey = `human_${h.role}_cost`
+          const countKey = `human_${h.role}_count_L${effectiveLevel}`
+          const annual = costOverrides[overrideKey] ?? (AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.annual || 130000)
+          const count = costOverrides[countKey] ?? h.count
+          return total + (annual * count)
+        }, 0)
+
+        const baselineHumanCost = getHumanCost(baselineTeam)
+        const targetHumanCost = getHumanCost(targetTeam)
+        const agentCount = costOverrides.agentCount ?? targetTeam.agents
+        const agentMonthly = (platformCosts.perAgentMonth * agentCount) + (platformCosts.infraMonth || 0) + (platformCosts.llmTokenMonth || 0) + (platformCosts.subscriptionMonth || 0)
+        const agentAnnual = agentMonthly * 12
+        const overrideTraining = costOverrides.xform_training ?? xformCost.training
+        const overrideTooling = costOverrides.xform_tooling ?? xformCost.tooling
+        const overrideChangeMgmt = costOverrides.xform_changeMgmt ?? xformCost.changeManagement
+        const overrideHiring = costOverrides.xform_hiring ?? xformCost.hiring
+        const oneTimeCost = overrideTraining + overrideTooling + overrideChangeMgmt + overrideHiring
+        const yr1Total = oneTimeCost + targetHumanCost + agentAnnual
+        const yr2Total = targetHumanCost + agentAnnual
+        const baselineAnnual = baselineHumanCost
+        const yr1Savings = baselineAnnual - (targetHumanCost + agentAnnual)
+        const yr2Savings = baselineAnnual - (targetHumanCost + agentAnnual)
+        const yr1NetSavings = yr1Savings - oneTimeCost
+        const paybackMonths = yr1Savings > 0 ? Math.ceil(oneTimeCost / (yr1Savings / 12)) : 0
+
+        const fmt = (n) => n >= 0 ? `$${(n/1000).toFixed(0)}K` : `-$${(Math.abs(n)/1000).toFixed(0)}K`
+        const fmtFull = (n) => `$${n.toLocaleString()}`
+
+        return (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="font-bold text-xl mb-1">Transformation Cost Estimator</h3>
+                  <p className="text-sm opacity-90">
+                    One-time transformation + running costs for L{effectiveLevel} on {platformCosts.label}
+                    {tsCfg && <span className="ml-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">Target State Driven</span>}
+                  </p>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">One-time</div>
+                    <div className="font-bold">{fmt(oneTimeCost)}</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">Year 1 Total</div>
+                    <div className="font-bold">{fmt(yr1Total)}</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xs opacity-80">Year 2 Running</div>
+                    <div className="font-bold">{fmt(yr2Total)}</div>
+                  </div>
+                  {yr1Savings > 0 && (
+                    <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
+                      <div className="text-xs opacity-80">Payback</div>
+                      <div className="font-bold">{paybackMonths} months</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Baseline vs Target side-by-side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5">
+                <div className="font-bold text-red-800 text-base mb-1">Baseline: {baselineTeam.label}</div>
+                <div className="text-xs text-red-700 mb-3">{baselineTeam.humans.reduce((s,h) => s + h.count, 0)} humans · 0 agents</div>
+                <div className="text-3xl font-bold text-red-900">{fmt(baselineHumanCost)}<span className="text-sm font-normal text-red-600"> / year</span></div>
+                <div className="mt-3 space-y-1">
+                  {baselineTeam.humans.map(h => (
+                    <div key={h.role} className="flex justify-between text-xs text-red-700">
+                      <span>{h.role} x{h.count}</span>
+                      <span className="font-semibold">{fmt((AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.annual || 130000) * h.count)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5">
+                <div className="font-bold text-emerald-800 text-base mb-1">Target: L{effectiveLevel} — {targetTeam.label}</div>
+                <div className="text-xs text-emerald-700 mb-3">{targetTeam.humans.reduce((s,h) => s + (costOverrides[`human_${h.role}_count_L${effectiveLevel}`] ?? h.count), 0)} humans · {agentCount} agents</div>
+                <div className="text-3xl font-bold text-emerald-900">{fmt(targetHumanCost + agentAnnual)}<span className="text-sm font-normal text-emerald-600"> / year</span></div>
+                <div className="mt-3 space-y-1">
+                  {targetTeam.humans.map(h => {
+                    const cnt = costOverrides[`human_${h.role}_count_L${effectiveLevel}`] ?? h.count
+                    const ann = costOverrides[`human_${h.role}_cost`] ?? (AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.annual || 130000)
+                    return (
+                      <div key={h.role} className="flex justify-between text-xs text-emerald-700">
+                        <span>{h.role} x{cnt}</span>
+                        <span className="font-semibold">{fmt(ann * cnt)}</span>
+                      </div>
+                    )
+                  })}
+                  <div className="flex justify-between text-xs text-emerald-700 pt-1 border-t border-emerald-200">
+                    <span>AI Agents x{agentCount} ({platformCosts.label})</span>
+                    <span className="font-semibold">{fmt(agentAnnual)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Human Cost Breakdown (editable) */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">Human Cost Breakdown — L{effectiveLevel} Target Team</h3>
+                <p className="text-xs text-gray-500">Edit count or annual cost to adjust the estimate</p>
+              </div>
+              <div className="card-body">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-600 uppercase">Role</th>
+                      <th className="text-center py-2 px-3 text-xs font-semibold text-gray-600 uppercase w-20">Count</th>
+                      <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase w-32">Annual / Person</th>
+                      <th className="text-right py-2 pl-3 text-xs font-semibold text-gray-600 uppercase w-28">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {targetTeam.humans.map((h, i) => {
+                      const countKey = `human_${h.role}_count_L${effectiveLevel}`
+                      const costKey = `human_${h.role}_cost`
+                      const cnt = costOverrides[countKey] ?? h.count
+                      const ann = costOverrides[costKey] ?? (AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.annual || 130000)
+                      return (
+                        <tr key={h.role} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                          <td className="py-2.5 pr-4 font-semibold text-gray-800">{AGENT_COST_ESTIMATOR.humanRoleCosts[h.role]?.label || h.role}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <input type="number" min={0} max={50}
+                              className="w-16 text-center border border-gray-300 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                              value={cnt}
+                              onChange={e => setCostOverrides(prev => ({ ...prev, [countKey]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <input type="number" step={5000} min={0}
+                              className="w-28 text-right border border-gray-300 rounded-lg py-1 px-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                              value={ann}
+                              onChange={e => setCostOverrides(prev => ({ ...prev, [costKey]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                          </td>
+                          <td className="py-2.5 pl-3 text-right font-bold text-emerald-700">{fmtFull(ann * cnt)}</td>
+                        </tr>
+                      )
+                    })}
+                    <tr className="border-t-2 border-gray-300 bg-emerald-50">
+                      <td className="py-2.5 pr-4 font-bold text-gray-800" colSpan={3}>Total Human Cost</td>
+                      <td className="py-2.5 pl-3 text-right font-bold text-emerald-800 text-base">{fmtFull(targetHumanCost)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Agent Running Cost */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">Agent Running Cost — {platformCosts.label}</h3>
+                <p className="text-xs text-gray-500">Monthly costs for {agentCount} agents on the selected platform</p>
+              </div>
+              <div className="card-body">
+                <div className="flex items-center gap-4 mb-4">
+                  <label className="text-sm font-semibold text-gray-700">Agent Count:</label>
+                  <input type="number" min={0} max={50}
+                    className="w-20 text-center border border-gray-300 rounded-lg py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-400"
+                    value={agentCount}
+                    onChange={e => setCostOverrides(prev => ({ ...prev, agentCount: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-600 uppercase">Cost Component</th>
+                      <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase w-28">Monthly</th>
+                      <th className="text-right py-2 pl-3 text-xs font-semibold text-gray-600 uppercase w-28">Annual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-100 bg-gray-50/50">
+                      <td className="py-2.5 pr-4 text-gray-700">Per-agent cost ({agentCount} agents x {fmtFull(platformCosts.perAgentMonth)}/mo)</td>
+                      <td className="py-2.5 px-3 text-right font-semibold">{fmtFull(platformCosts.perAgentMonth * agentCount)}</td>
+                      <td className="py-2.5 pl-3 text-right font-semibold">{fmtFull(platformCosts.perAgentMonth * agentCount * 12)}</td>
+                    </tr>
+                    {platformCosts.infraMonth > 0 && (
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2.5 pr-4 text-gray-700">Infrastructure (compute, storage)</td>
+                        <td className="py-2.5 px-3 text-right font-semibold">{fmtFull(platformCosts.infraMonth)}</td>
+                        <td className="py-2.5 pl-3 text-right font-semibold">{fmtFull(platformCosts.infraMonth * 12)}</td>
+                      </tr>
+                    )}
+                    {platformCosts.llmTokenMonth > 0 && (
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
+                        <td className="py-2.5 pr-4 text-gray-700">LLM token costs (API spend)</td>
+                        <td className="py-2.5 px-3 text-right font-semibold">{fmtFull(platformCosts.llmTokenMonth)}</td>
+                        <td className="py-2.5 pl-3 text-right font-semibold">{fmtFull(platformCosts.llmTokenMonth * 12)}</td>
+                      </tr>
+                    )}
+                    {platformCosts.subscriptionMonth > 0 && (
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2.5 pr-4 text-gray-700">Platform subscription</td>
+                        <td className="py-2.5 px-3 text-right font-semibold">{fmtFull(platformCosts.subscriptionMonth)}</td>
+                        <td className="py-2.5 pl-3 text-right font-semibold">{fmtFull(platformCosts.subscriptionMonth * 12)}</td>
+                      </tr>
+                    )}
+                    <tr className="border-t-2 border-gray-300 bg-teal-50">
+                      <td className="py-2.5 pr-4 font-bold text-gray-800">Total Agent Running Cost</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-teal-700">{fmtFull(agentMonthly)}</td>
+                      <td className="py-2.5 pl-3 text-right font-bold text-teal-800 text-base">{fmtFull(agentAnnual)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* One-Time Transformation Cost (editable) */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">One-Time Transformation Cost</h3>
+                <p className="text-xs text-gray-500">Investment to reach L{effectiveLevel} — edit each line to adjust</p>
+              </div>
+              <div className="card-body">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-600 uppercase">Category</th>
+                      <th className="text-right py-2 pl-3 text-xs font-semibold text-gray-600 uppercase w-36">Amount (USD)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { key: 'xform_training', label: 'Training & Certification', defaultVal: xformCost.training },
+                      { key: 'xform_tooling', label: 'Tooling & Platform Setup', defaultVal: xformCost.tooling },
+                      { key: 'xform_changeMgmt', label: 'Change Management', defaultVal: xformCost.changeManagement },
+                      { key: 'xform_hiring', label: 'Hiring / Talent Acquisition', defaultVal: xformCost.hiring },
+                    ].map((item, i) => (
+                      <tr key={item.key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                        <td className="py-2.5 pr-4 text-gray-700">{item.label}</td>
+                        <td className="py-2.5 pl-3 text-right">
+                          <input type="number" step={5000} min={0}
+                            className="w-32 text-right border border-gray-300 rounded-lg py-1 px-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            value={costOverrides[item.key] ?? item.defaultVal}
+                            onChange={e => setCostOverrides(prev => ({ ...prev, [item.key]: Math.max(0, parseInt(e.target.value) || 0) }))} />
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-gray-300 bg-amber-50">
+                      <td className="py-2.5 pr-4 font-bold text-gray-800">Total One-Time Cost</td>
+                      <td className="py-2.5 pl-3 text-right font-bold text-amber-800 text-base">{fmtFull(oneTimeCost)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Total Cost of Ownership Summary */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 text-white">
+              <h3 className="font-bold text-lg mb-4">Total Cost of Ownership — 3-Year View</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white/10 rounded-xl p-4 text-center">
+                  <div className="text-xs text-white/70">One-Time Investment</div>
+                  <div className="font-bold text-xl mt-1">{fmt(oneTimeCost)}</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4 text-center">
+                  <div className="text-xs text-white/70">Year 1 (incl. one-time)</div>
+                  <div className="font-bold text-xl mt-1">{fmt(yr1Total)}</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4 text-center">
+                  <div className="text-xs text-white/70">Year 2 Running</div>
+                  <div className="font-bold text-xl mt-1">{fmt(yr2Total)}</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4 text-center">
+                  <div className="text-xs text-white/70">Year 3 Running</div>
+                  <div className="font-bold text-xl mt-1">{fmt(yr2Total)}</div>
+                </div>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-white/70 uppercase">Component</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-white/70 uppercase">Year 1</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-white/70 uppercase">Year 2</th>
+                    <th className="text-right py-2 pl-3 text-xs font-semibold text-white/70 uppercase">Year 3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-white/10">
+                    <td className="py-2 pr-4 text-white/90">One-Time Transformation</td>
+                    <td className="py-2 px-3 text-right">{fmtFull(oneTimeCost)}</td>
+                    <td className="py-2 px-3 text-right text-white/40">—</td>
+                    <td className="py-2 pl-3 text-right text-white/40">—</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="py-2 pr-4 text-white/90">Human Team Cost</td>
+                    <td className="py-2 px-3 text-right">{fmtFull(targetHumanCost)}</td>
+                    <td className="py-2 px-3 text-right">{fmtFull(targetHumanCost)}</td>
+                    <td className="py-2 pl-3 text-right">{fmtFull(targetHumanCost)}</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="py-2 pr-4 text-white/90">Agent Running Cost</td>
+                    <td className="py-2 px-3 text-right">{fmtFull(agentAnnual)}</td>
+                    <td className="py-2 px-3 text-right">{fmtFull(agentAnnual)}</td>
+                    <td className="py-2 pl-3 text-right">{fmtFull(agentAnnual)}</td>
+                  </tr>
+                  <tr className="border-t-2 border-white/30">
+                    <td className="py-2.5 pr-4 font-bold text-white">Total</td>
+                    <td className="py-2.5 px-3 text-right font-bold">{fmtFull(yr1Total)}</td>
+                    <td className="py-2.5 px-3 text-right font-bold">{fmtFull(yr2Total)}</td>
+                    <td className="py-2.5 pl-3 text-right font-bold">{fmtFull(yr2Total)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Savings Projection */}
+            <div className={`rounded-2xl p-6 border-2 ${yr1Savings > 0 ? 'bg-green-50 border-green-300' : 'bg-orange-50 border-orange-300'}`}>
+              <h3 className={`font-bold text-lg mb-4 ${yr1Savings > 0 ? 'text-green-800' : 'text-orange-800'}`}>
+                Savings Projection vs Baseline (L1 Traditional Team)
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+                  <div className="text-xs text-gray-500">Baseline Annual Cost</div>
+                  <div className="font-bold text-lg text-gray-800 mt-1">{fmt(baselineAnnual)}</div>
+                  <div className="text-[10px] text-gray-400">{baselineTeam.humans.reduce((s,h)=>s+h.count,0)} humans, 0 agents</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+                  <div className="text-xs text-gray-500">Annual Running Savings</div>
+                  <div className={`font-bold text-lg mt-1 ${yr1Savings > 0 ? 'text-green-700' : 'text-orange-700'}`}>{yr1Savings > 0 ? '+' : ''}{fmt(yr1Savings)}</div>
+                  <div className="text-[10px] text-gray-400">{yr1Savings > 0 ? 'saved' : 'additional cost'} per year</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+                  <div className="text-xs text-gray-500">Year 1 Net (incl. one-time)</div>
+                  <div className={`font-bold text-lg mt-1 ${yr1NetSavings > 0 ? 'text-green-700' : 'text-orange-700'}`}>{yr1NetSavings > 0 ? '+' : ''}{fmt(yr1NetSavings)}</div>
+                  <div className="text-[10px] text-gray-400">after transformation investment</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+                  <div className="text-xs text-gray-500">Payback Period</div>
+                  <div className="font-bold text-lg text-gray-800 mt-1">
+                    {paybackMonths > 0 && paybackMonths <= 36 ? `${paybackMonths} months` : paybackMonths > 36 ? '36+ months' : '—'}
+                  </div>
+                  <div className="text-[10px] text-gray-400">to recover one-time cost</div>
+                </div>
+              </div>
+              {yr1Savings > 0 && (
+                <div className="mt-4 bg-white rounded-xl p-4 border border-green-200">
+                  <div className="text-sm text-green-800">
+                    <strong>3-Year Cumulative Savings:</strong> {fmtFull(yr1NetSavings + yr2Savings * 2)} — the transformation pays for itself
+                    {paybackMonths > 0 && paybackMonths <= 12 && ` within Year 1`}
+                    {paybackMonths > 12 && paybackMonths <= 24 && ` during Year 2`}
+                    {paybackMonths > 24 && paybackMonths <= 36 && ` during Year 3`}
+                    .
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Platform comparison mini-table */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="font-bold text-gray-800">Platform Cost Comparison — {agentCount} Agents</h3>
+                <p className="text-xs text-gray-500">Annual agent running cost across all platforms (does not include human costs)</p>
+              </div>
+              <div className="card-body">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200">
+                        <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-600 uppercase">Platform</th>
+                        <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase">Per-Agent/mo</th>
+                        <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase">Infra/mo</th>
+                        <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase">LLM/mo</th>
+                        <th className="text-right py-2 px-3 text-xs font-semibold text-gray-600 uppercase">Subscription/mo</th>
+                        <th className="text-right py-2 pl-3 text-xs font-semibold text-gray-600 uppercase">Annual Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(AGENT_COST_ESTIMATOR.agentCostsByPlatform).map(([pid, pc], i) => {
+                        const annTotal = ((pc.perAgentMonth * agentCount) + (pc.infraMonth || 0) + (pc.llmTokenMonth || 0) + (pc.subscriptionMonth || 0)) * 12
+                        const isSelected = pid === platformId
+                        return (
+                          <tr key={pid} className={`border-b border-gray-100 ${isSelected ? 'bg-emerald-50 font-semibold' : i % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                            <td className="py-2.5 pr-4">
+                              {pc.label}
+                              {isSelected && <span className="ml-2 text-[9px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full">Selected</span>}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">{fmtFull(pc.perAgentMonth)}</td>
+                            <td className="py-2.5 px-3 text-right">{pc.infraMonth ? fmtFull(pc.infraMonth) : '—'}</td>
+                            <td className="py-2.5 px-3 text-right">{pc.llmTokenMonth ? fmtFull(pc.llmTokenMonth) : '—'}</td>
+                            <td className="py-2.5 px-3 text-right">{pc.subscriptionMonth ? fmtFull(pc.subscriptionMonth) : '—'}</td>
+                            <td className={`py-2.5 pl-3 text-right font-bold ${isSelected ? 'text-emerald-700' : 'text-gray-700'}`}>{fmtFull(annTotal)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="flex gap-4">
         <Link to="/recommendations" className="btn-primary flex-1 text-center py-3">💡 View All Recommendations →</Link>
